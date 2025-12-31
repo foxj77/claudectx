@@ -6,8 +6,10 @@ import (
 
 	"github.com/johnfox/claudectx/internal/config"
 	"github.com/johnfox/claudectx/internal/paths"
+	"github.com/johnfox/claudectx/internal/printer"
 	"github.com/johnfox/claudectx/internal/profile"
 	"github.com/johnfox/claudectx/internal/store"
+	"github.com/johnfox/claudectx/internal/validator"
 )
 
 // CreateProfile creates a new profile from the current Claude configuration
@@ -30,6 +32,12 @@ func CreateProfile(s *store.Store, name string) error {
 
 	settings := config.LoadSettingsOrEmpty(settingsPath)
 
+	// Validate current settings before creating profile
+	if err := validator.ValidateSettings(settings); err != nil {
+		printer.Warning("Warning: Current settings may be invalid: %v", err)
+		printer.Warning("Creating profile anyway...")
+	}
+
 	// Load current CLAUDE.md if it exists
 	claudeMDPath, err := paths.ClaudeMDFile()
 	if err != nil {
@@ -43,6 +51,12 @@ func CreateProfile(s *store.Store, name string) error {
 			return fmt.Errorf("failed to read CLAUDE.md: %w", err)
 		}
 		claudeMD = string(content)
+
+		// Validate CLAUDE.md
+		if err := validator.ValidateClaudeMD(claudeMD); err != nil {
+			printer.Warning("Warning: CLAUDE.md may be invalid: %v", err)
+			printer.Warning("Creating profile anyway...")
+		}
 	}
 
 	// Create the profile
@@ -54,6 +68,21 @@ func CreateProfile(s *store.Store, name string) error {
 		return fmt.Errorf("failed to save profile: %w", err)
 	}
 
-	fmt.Printf("Created profile %q from current configuration\n", name)
+	printer.Success("Created profile %q from current configuration", name)
+
+	// Show what was captured
+	if settings.Model != "" {
+		printer.Info("  Model: %s", settings.Model)
+	}
+	if len(settings.Env) > 0 {
+		printer.Info("  Environment variables: %d", len(settings.Env))
+	}
+	if settings.Permissions != nil && (len(settings.Permissions.Allow) > 0 || len(settings.Permissions.Deny) > 0) {
+		printer.Info("  Permissions configured: yes")
+	}
+	if claudeMD != "" {
+		printer.Info("  CLAUDE.md included: yes")
+	}
+
 	return nil
 }

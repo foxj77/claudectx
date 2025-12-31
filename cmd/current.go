@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/johnfox/claudectx/internal/printer"
 	"github.com/johnfox/claudectx/internal/store"
 )
 
@@ -14,10 +15,11 @@ func ShowCurrent(s *store.Store) error {
 	}
 
 	if current == "" {
-		fmt.Println("No profile is currently active")
+		printer.Info("No profile is currently active")
 		return nil
 	}
 
-	fmt.Println(current)
+	// Use colored output for current profile
+	fmt.Println(printer.Colorize(current, printer.Cyan))
 	return nil
 }

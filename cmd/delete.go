@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/johnfox/claudectx/internal/printer"
 	"github.com/johnfox/claudectx/internal/store"
 )
 
-// DeleteProfile deletes a profile
+// DeleteProfile deletes a profile with safety checks
 func DeleteProfile(s *store.Store, name string) error {
 	// Check if profile exists
 	if !s.Exists(name) {
@@ -35,6 +36,6 @@ func DeleteProfile(s *store.Store, name string) error {
 		s.SetPrevious("")
 	}
 
-	fmt.Printf("Deleted profile %q\n", name)
+	printer.Success("Deleted profile %q", name)
 	return nil
 }

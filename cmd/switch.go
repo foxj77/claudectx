@@ -4,13 +4,22 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/johnfox/claudectx/internal/backup"
 	"github.com/johnfox/claudectx/internal/config"
 	"github.com/johnfox/claudectx/internal/paths"
+	"github.com/johnfox/claudectx/internal/printer"
+	"github.com/johnfox/claudectx/internal/profile"
 	"github.com/johnfox/claudectx/internal/store"
+	"github.com/johnfox/claudectx/internal/validator"
 )
 
-// SwitchProfile switches to a different profile
+// SwitchProfile switches to a different profile with backup and validation
 func SwitchProfile(s *store.Store, name string) error {
+	// Validate profile name
+	if err := profile.ValidateProfileName(name); err != nil {
+		return fmt.Errorf("invalid profile name: %w", err)
+	}
+
 	// Check if profile exists
 	if !s.Exists(name) {
 		return fmt.Errorf("profile %q does not exist", name)
@@ -22,6 +31,36 @@ func SwitchProfile(s *store.Store, name string) error {
 		return fmt.Errorf("failed to load profile: %w", err)
 	}
 
+	// Validate the profile before switching
+	if err := prof.Validate(); err != nil {
+		return fmt.Errorf("profile validation failed: %w", err)
+	}
+
+	// Validate settings
+	if err := validator.ValidateSettings(prof.Settings); err != nil {
+		return fmt.Errorf("profile settings are invalid: %w", err)
+	}
+
+	// Validate CLAUDE.md content
+	if err := validator.ValidateClaudeMD(prof.ClaudeMD); err != nil {
+		return fmt.Errorf("profile CLAUDE.md is invalid: %w", err)
+	}
+
+	// Create backup manager
+	backupMgr, err := backup.NewManager()
+	if err != nil {
+		return fmt.Errorf("failed to initialize backup manager: %w", err)
+	}
+
+	// Create backup before switching
+	backupID, err := backupMgr.Create()
+	if err != nil {
+		printer.Warning("Warning: Failed to create backup: %v", err)
+		printer.Warning("Continuing without backup...")
+	} else {
+		printer.Info("Created backup: %s", backupID)
+	}
+
 	// Get current profile name (for previous tracking)
 	currentName, err := s.GetCurrent()
 	if err != nil {
@@ -31,17 +70,20 @@ func SwitchProfile(s *store.Store, name string) error {
 	// Save settings to active location
 	settingsPath, err := paths.SettingsFile()
 	if err != nil {
+		rollback(backupMgr, backupID)
 		return fmt.Errorf("failed to get settings path: %w", err)
 	}
 
 	err = config.SaveSettings(settingsPath, prof.Settings)
 	if err != nil {
+		rollback(backupMgr, backupID)
 		return fmt.Errorf("failed to save settings: %w", err)
 	}
 
 	// Handle CLAUDE.md
 	claudeMDPath, err := paths.ClaudeMDFile()
 	if err != nil {
+		rollback(backupMgr, backupID)
 		return fmt.Errorf("failed to get CLAUDE.md path: %w", err)
 	}
 
@@ -49,6 +91,7 @@ func SwitchProfile(s *store.Store, name string) error {
 		// Write CLAUDE.md
 		err = os.WriteFile(claudeMDPath, []byte(prof.ClaudeMD), 0644)
 		if err != nil {
+			rollback(backupMgr, backupID)
 			return fmt.Errorf("failed to write CLAUDE.md: %w", err)
 		}
 	} else {
@@ -62,6 +105,7 @@ func SwitchProfile(s *store.Store, name string) error {
 	if currentName != "" {
 		err = s.SetPrevious(currentName)
 		if err != nil {
+			rollback(backupMgr, backupID)
 			return fmt.Errorf("failed to set previous profile: %w", err)
 		}
 	}
@@ -69,9 +113,32 @@ func SwitchProfile(s *store.Store, name string) error {
 	// Update current profile
 	err = s.SetCurrent(name)
 	if err != nil {
+		rollback(backupMgr, backupID)
 		return fmt.Errorf("failed to set current profile: %w", err)
 	}
 
-	fmt.Printf("Switched to profile %q\n", name)
+	// Prune old backups (keep last 10)
+	if err := backupMgr.Prune(10); err != nil {
+		printer.Warning("Warning: Failed to prune old backups: %v", err)
+	}
+
+	printer.Success("Switched to profile %q", name)
 	return nil
+}
+
+// rollback attempts to restore from backup
+func rollback(backupMgr *backup.Manager, backupID string) {
+	if backupID == "" {
+		return // No backup to restore from
+	}
+
+	printer.Warning("Rolling back due to error...")
+	err := backupMgr.Restore(backupID)
+	if err != nil {
+		printer.Error("Rollback failed: %v", err)
+		printer.Error("You may need to manually restore your configuration")
+		printer.Error("Backup ID: %s", backupID)
+	} else {
+		printer.Info("Successfully rolled back to previous configuration")
+	}
 }

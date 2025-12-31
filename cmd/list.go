@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/johnfox/claudectx/internal/printer"
 	"github.com/johnfox/claudectx/internal/store"
 )
 
@@ -15,7 +16,7 @@ func ListProfiles(s *store.Store) error {
 	}
 
 	if len(profiles) == 0 {
-		fmt.Println("No profiles found. Create one with: claudectx -n <name>")
+		printer.Info("No profiles found. Create one with: claudectx -n <name>")
 		return nil
 	}
 
@@ -28,15 +29,14 @@ func ListProfiles(s *store.Store) error {
 	// Sort profiles alphabetically
 	sort.Strings(profiles)
 
-	// Print each profile
-	for _, name := range profiles {
-		if name == current {
-			// Highlight current profile (using bold/color in future)
-			fmt.Printf("%s (current)\n", name)
-		} else {
-			fmt.Println(name)
-		}
+	// Build highlight map
+	highlightMap := make(map[string]string)
+	if current != "" {
+		highlightMap[current] = "(current)"
 	}
+
+	// Print using the printer package
+	printer.PrintList(profiles, highlightMap)
 
 	return nil
 }
