@@ -3,14 +3,28 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/johnfox/claudectx/cmd"
+	"github.com/johnfox/claudectx/internal/store"
 )
 
 const version = "0.1.0"
 
 func main() {
+	// Initialize store
+	s, err := store.NewStore()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to initialize claudectx: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Parse arguments
 	if len(os.Args) < 2 {
 		// Default action: list profiles
-		listProfiles()
+		if err := cmd.ListProfiles(s); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 		return
 	}
 
@@ -19,28 +33,50 @@ func main() {
 	switch arg {
 	case "-h", "--help":
 		printHelp()
+
 	case "-v", "--version":
 		fmt.Printf("claudectx version %s\n", version)
+
 	case "-c", "--current":
-		showCurrent()
+		if err := cmd.ShowCurrent(s); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	case "-":
-		togglePrevious()
+		if err := cmd.TogglePrevious(s); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	case "-n":
 		if len(os.Args) < 3 {
 			fmt.Fprintln(os.Stderr, "Error: profile name required")
+			fmt.Fprintln(os.Stderr, "Usage: claudectx -n <name>")
 			os.Exit(1)
 		}
-		createProfile(os.Args[2])
+		if err := cmd.CreateProfile(s, os.Args[2]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	case "-d":
 		if len(os.Args) < 3 {
 			fmt.Fprintln(os.Stderr, "Error: profile name required")
+			fmt.Fprintln(os.Stderr, "Usage: claudectx -d <name>")
 			os.Exit(1)
 		}
-		deleteProfile(os.Args[2])
+		if err := cmd.DeleteProfile(s, os.Args[2]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	default:
-		// Check if it's a rename operation (name=oldname)
-		// Check if it's a profile switch
-		switchProfile(arg)
+		// Assume it's a profile name to switch to
+		if err := cmd.SwitchProfile(s, arg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	}
 }
 
@@ -63,31 +99,13 @@ EXAMPLES:
   claudectx -n personal    Create 'personal' profile from current settings
   claudectx -d old-work    Delete 'old-work' profile
 
+WHAT CLAUDECTX MANAGES:
+  - ~/.claude/settings.json    User-level settings
+  - ~/.claude/CLAUDE.md        Global instructions
+
+Profiles are stored in ~/.claude/profiles/
+
 Inspired by kubectx - https://github.com/ahmetb/kubectx
 `
 	fmt.Print(help)
-}
-
-func listProfiles() {
-	fmt.Println("claudectx: list profiles - TODO")
-}
-
-func showCurrent() {
-	fmt.Println("claudectx: show current - TODO")
-}
-
-func togglePrevious() {
-	fmt.Println("claudectx: toggle previous - TODO")
-}
-
-func createProfile(name string) {
-	fmt.Printf("claudectx: create profile '%s' - TODO\n", name)
-}
-
-func deleteProfile(name string) {
-	fmt.Printf("claudectx: delete profile '%s' - TODO\n", name)
-}
-
-func switchProfile(name string) {
-	fmt.Printf("claudectx: switch to profile '%s' - TODO\n", name)
 }
