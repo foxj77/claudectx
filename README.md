@@ -24,14 +24,14 @@ Claude Code doesn't have built-in profile or context switching. If you work with
 
 ## Status
 
-✅ **Phase 2 Complete** - Production ready!
+✅ **Phase 3 Complete** - Feature complete!
 
 - ✅ Phase 1: Core MVP - All commands working
 - ✅ Phase 2: Polish & Safety - Backups, validation, colored output
-- 🔮 Phase 3: Enhancement - fzf, shell completion (planned)
+- ✅ Phase 3: Progressive Enhancement - Export/import, shell completion, health checks
 - 🔮 Phase 4: Distribution - Homebrew, releases (planned)
 
-See [PHASE2_COMPLETE.md](PHASE2_COMPLETE.md) for Phase 2 details.
+See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) for Phase 3 details.
 
 ## Installation
 
@@ -66,6 +66,18 @@ claudectx -n personal
 
 # Delete profile
 claudectx -d old-profile
+
+# Export profile to JSON
+claudectx export work work.json
+
+# Import profile from JSON
+claudectx import work.json
+
+# Check profile health
+claudectx health work
+
+# Pipe profiles between machines
+claudectx export work | ssh remote 'claudectx import - work'
 ```
 
 ## Installation
@@ -147,11 +159,13 @@ go test ./...
   - [x] Colored output
   - [x] Better error messages
   - [x] 68 tests, all passing
-- [ ] Phase 3: Enhancement (optional)
-  - [ ] fzf integration for interactive selection
-  - [ ] Shell completion (bash/zsh/fish)
-  - [ ] Export/import profiles
-  - [ ] Health checks
+- [x] Phase 3: Progressive Enhancement ✅
+  - [x] Export/import profiles
+  - [x] Shell completion (bash/zsh/fish)
+  - [x] Health checks
+  - [x] 81+ tests, all passing
+  - Skipped: fzf integration (optional)
+  - Skipped: Profile templates (export/import serves this purpose)
 - [ ] Phase 4: Distribution
   - [ ] Homebrew formula
   - [ ] Release automation (GoReleaser)
