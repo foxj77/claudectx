@@ -1,194 +1,398 @@
 # claudectx
 
-Fast way to switch between Claude Code configuration profiles.
+**Fast, safe profile switching for Claude Code**
 
-Inspired by [kubectx](https://github.com/ahmetb/kubectx).
+Switch between Claude Code configurations in seconds. Perfect for managing multiple accounts, API providers, or client-specific settings.
 
-## Why?
+![Version](https://img.shields.io/badge/version-0.4.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-Claude Code doesn't have built-in profile or context switching. If you work with:
-- Multiple Claude accounts (work vs personal)
-- Different API providers (Anthropic, Bedrock, custom endpoints)
-- Client-specific configurations
-- Different tool permissions and MCP servers
+---
 
-...then you need `claudectx`.
+## What is claudectx?
 
-## Features
+claudectx is a command-line tool that lets you quickly switch between different Claude Code configurations. Think of it like profiles for your browser, but for Claude Code.
 
-- **Interactive mode**: Arrow key navigation to select profiles
-- **Simple commands**: `claudectx work`, `claudectx -` (toggle)
-- **Comprehensive management**: Settings, auth, MCP servers, CLAUDE.md files
-- **Safe switching**: Automatic backups and validation
-- **Cross-platform**: Single binary for macOS, Linux, Windows
-- **No dependencies**: Just a single Go binary
+**Perfect for:**
+- 👔 Switching between work and personal Claude accounts
+- 🏢 Managing different client configurations
+- 🔌 Testing different API providers (Anthropic, Bedrock, custom)
+- 🛠️ Using different tool permissions and MCP servers
+- 📝 Maintaining separate instruction sets (CLAUDE.md files)
 
-## Status
+---
 
-✅ **Phase 3 Complete** - Feature complete!
+## Quick Start
 
-- ✅ Phase 1: Core MVP - All commands working
-- ✅ Phase 2: Polish & Safety - Backups, validation, colored output
-- ✅ Phase 3: Progressive Enhancement - Export/import, shell completion, health checks
-- 🔮 Phase 4: Distribution - Homebrew, releases (planned)
+### Interactive Mode
 
-See [PHASE3_COMPLETE.md](PHASE3_COMPLETE.md) for Phase 3 details.
+The easiest way to switch profiles:
+
+```bash
+claudectx
+```
+
+Use **↑/↓ arrow keys** to navigate, **Enter** to select:
+
+```
+Select a profile:
+
+  work
+❯ personal (current)
+  client-acme
+
+Use ↑/↓ to navigate, Enter to select, Esc/Ctrl+C to cancel
+```
+
+### Direct Switch
+
+If you know the profile name:
+
+```bash
+claudectx work
+```
+
+### Toggle Between Profiles
+
+Quickly switch back and forth:
+
+```bash
+claudectx -
+```
+
+---
 
 ## Installation
 
+### macOS / Linux (Homebrew)
+
 ```bash
-# Quick install (no sudo required)
-cd /Users/johnfox/Documents/claudectx
-make install-user
-
-# Or install system-wide
-make install
-
-# See INSTALL.md for detailed instructions
+# Coming soon in v1.0.0
+brew install foxj77/tap/claudectx
 ```
 
-## Usage
+### Manual Installation
+
+**Option 1: Install to your user directory (no sudo required)**
 
 ```bash
-# Interactive mode - use arrow keys to select
-claudectx
+cd ~/Downloads
+git clone https://github.com/foxj77/claudectx.git
+cd claudectx
+make install-user
+```
 
-# Switch to a profile directly
-claudectx work
+This installs to `~/go/bin/claudectx`. Make sure `~/go/bin` is in your PATH:
 
-# Toggle to previous profile
-claudectx -
+```bash
+# For bash
+echo 'export PATH="$PATH:~/go/bin"' >> ~/.bashrc
+source ~/.bashrc
 
-# Simple list (for scripting)
+# For zsh
+echo 'export PATH="$PATH:~/go/bin"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**Option 2: Install system-wide**
+
+```bash
+cd ~/Downloads
+git clone https://github.com/foxj77/claudectx.git
+cd claudectx
+sudo make install
+```
+
+This installs to `/usr/local/bin/claudectx`.
+
+**Option 3: Download binary (coming in v1.0.0)**
+
+Download pre-built binaries from the [releases page](https://github.com/foxj77/claudectx/releases).
+
+---
+
+## Complete Usage Guide
+
+### Managing Profiles
+
+**Create a new profile** from your current settings:
+```bash
+claudectx -n work
+```
+
+**List all profiles** (simple text output):
+```bash
 claudectx -l
+```
 
-# Show current profile
+**Show current profile**:
+```bash
 claudectx -c
+```
 
-# Create new profile from current config
+**Delete a profile**:
+```bash
+claudectx -d old-client
+```
+
+### Advanced Features
+
+**Export a profile** to share with teammates:
+```bash
+# Export to file
+claudectx export work work-profile.json
+
+# Export to stdout (for piping)
+claudectx export work
+```
+
+**Import a profile**:
+```bash
+# Import from file
+claudectx import work-profile.json
+
+# Import and rename
+claudectx import work-profile.json client-new
+
+# Import from stdin
+cat work-profile.json | claudectx import
+```
+
+**Check profile health** (validates settings):
+```bash
+# Check current profile
+claudectx health
+
+# Check specific profile
+claudectx health work
+```
+
+**Transfer profiles between machines**:
+```bash
+claudectx export work | ssh remote-machine 'claudectx import - work'
+```
+
+---
+
+## Real-World Examples
+
+### Freelancer Managing Multiple Clients
+
+```bash
+# Create profiles for each client
+claudectx -n client-acme
+claudectx -n client-globex
 claudectx -n personal
 
-# Delete profile
-claudectx -d old-profile
+# Switch to client work
+claudectx client-acme
 
-# Export profile to JSON
-claudectx export work work.json
+# Quick toggle between client and personal
+claudectx -
 
-# Import profile from JSON
-claudectx import work.json
-
-# Check profile health
-claudectx health work
-
-# Pipe profiles between machines
-claudectx export work | ssh remote 'claudectx import - work'
+# Export client profile for backup
+claudectx export client-acme ~/backups/acme-$(date +%Y%m%d).json
 ```
 
-## Installation
+### Developer with Work and Personal Accounts
 
-Coming soon! Will support:
-- Homebrew: `brew install claudectx`
-- Direct download: Binary releases for all platforms
-- Build from source: `go install github.com/johnfox/claudectx@latest`
+```bash
+# Create work profile
+claudectx -n work
 
-## What claudectx Manages
+# Create personal profile
+claudectx -n personal
 
-- `~/.claude/settings.json` - User-level settings
-- `~/.claude/CLAUDE.md` - Global instructions
-- Authentication configuration (API keys, base URLs)
-- MCP servers (user scope)
-- Environment variables
+# Start work day
+claudectx work
 
-## What it Doesn't Manage
+# End of day, switch to personal
+claudectx personal
 
-- Project-level settings (stays in your projects)
-- OAuth session tokens (too risky)
-- Conversation history
-- Project state
+# Or use interactive mode
+claudectx
+```
 
-## Comparison with Existing Tools
+### Team Sharing Configuration
 
-| Tool | Scope | Backups | Validation | Status |
-|------|-------|---------|------------|--------|
-| [cctx](https://github.com/nwiizo/cctx) | settings.json only | ❌ | ❌ | Active |
-| Shell aliases | Full config dir | ❌ | ❌ | Manual |
-| **claudectx** | Comprehensive | ✅ Auto | ✅ Full | **Production ready** |
+```bash
+# Team lead creates and exports standard config
+claudectx -n team-standard
+claudectx export team-standard team-config.json
 
-## Architecture
+# Share file with team (email, Slack, git repo, etc.)
 
-Profiles are stored in `~/.claude/profiles/`:
+# Team members import
+claudectx import team-config.json work
+```
+
+---
+
+## What Gets Switched?
+
+When you switch profiles, claudectx manages:
+
+- ✅ `~/.claude/settings.json` - All your Claude Code settings
+- ✅ `~/.claude/CLAUDE.md` - Your global instructions
+- ✅ Model preferences (opus, sonnet, haiku)
+- ✅ Environment variables
+- ✅ Tool permissions
+- ✅ API configuration
+
+**What stays the same:**
+- ❌ Project-level settings in `.claude/` folders
+- ❌ OAuth session tokens
+- ❌ Conversation history
+- ❌ Project-specific configurations
+
+---
+
+## Safety Features
+
+claudectx is designed to be **safe and reliable**:
+
+🛡️ **Automatic Backups**
+Every switch creates a timestamped backup in `~/.claude/backups/`
+
+🔍 **Validation**
+Profiles are validated before switching to prevent corruption
+
+↩️ **Automatic Rollback**
+If anything goes wrong during a switch, your previous config is automatically restored
+
+💾 **Atomic Operations**
+Settings files are updated atomically - no partial updates
+
+🎨 **Clear Feedback**
+Color-coded output shows success (green), warnings (yellow), and errors (red)
+
+---
+
+## Shell Completion
+
+Enable tab completion for your shell:
+
+**Bash:**
+```bash
+source /path/to/claudectx/completion/bash_completion.sh
+```
+
+**Zsh:**
+```bash
+# Copy to a directory in your $fpath
+cp /path/to/claudectx/completion/zsh_completion.sh /usr/local/share/zsh/site-functions/_claudectx
+```
+
+**Fish:**
+```bash
+cp /path/to/claudectx/completion/fish_completion.fish ~/.config/fish/completions/
+```
+
+---
+
+## Troubleshooting
+
+### "command not found: claudectx"
+
+Make sure the installation directory is in your PATH:
+
+```bash
+# Check if ~/go/bin is in PATH
+echo $PATH | grep go/bin
+
+# If not, add it:
+echo 'export PATH="$PATH:~/go/bin"' >> ~/.zshrc  # or ~/.bashrc
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### "profile does not exist"
+
+List available profiles to see what exists:
+
+```bash
+claudectx -l
+```
+
+### Accidentally deleted a profile
+
+Check your backups:
+
+```bash
+ls ~/.claude/backups/
+```
+
+Each backup directory contains a complete copy of your settings.
+
+### Settings aren't taking effect
+
+Make sure Claude Code isn't running when you switch profiles. Restart Claude Code after switching.
+
+---
+
+## How It Works
+
+claudectx stores each profile in `~/.claude/profiles/`:
 
 ```
 ~/.claude/
-├── .claudectx-current      # Current profile tracker
-├── .claudectx-previous     # Previous profile (for toggle)
-├── profiles/               # Profile storage
-│   ├── default/
-│   │   ├── settings.json
-│   │   └── CLAUDE.md
+├── .claudectx-current      # Tracks which profile is active
+├── .claudectx-previous     # Enables toggle with 'claudectx -'
+├── profiles/
 │   ├── work/
-│   └── personal/
-├── backups/                # Automatic backups (Phase 2)
-│   ├── backup-1234567890/
 │   │   ├── settings.json
 │   │   └── CLAUDE.md
-│   └── backup-1234567891/
-├── settings.json           # Active config (managed by claudectx)
-└── CLAUDE.md               # Active instructions (managed by claudectx)
+│   └── personal/
+│       ├── settings.json
+│       └── CLAUDE.md
+├── backups/                # Automatic backups
+│   └── backup-1234567890/
+└── settings.json           # Active config (symlinked)
 ```
 
-## Development
+When you switch profiles, claudectx copies the profile's files to the active locations.
 
+---
+
+## Get Help
+
+**View all commands:**
 ```bash
-# Build
-go build -o claudectx
-
-# Run
-./claudectx --help
-
-# Test
-go test ./...
+claudectx --help
 ```
 
-## Roadmap
+**Check version:**
+```bash
+claudectx --version
+```
 
-- [x] Phase 1: Core MVP ✅
-  - [x] Project setup
-  - [x] Profile storage
-  - [x] All commands (switch/list/create/delete/toggle/current)
-  - [x] 44 tests, all passing
-- [x] Phase 2: Polish & Safety ✅
-  - [x] Automatic backups
-  - [x] Validation & rollback on failure
-  - [x] Colored output
-  - [x] Better error messages
-  - [x] 68 tests, all passing
-- [x] Phase 3: Progressive Enhancement ✅
-  - [x] Export/import profiles
-  - [x] Shell completion (bash/zsh/fish)
-  - [x] Health checks
-  - [x] 81+ tests, all passing
-  - Skipped: fzf integration (optional)
-  - Skipped: Profile templates (export/import serves this purpose)
-- [ ] Phase 4: Distribution
-  - [ ] Homebrew formula
-  - [ ] Release automation (GoReleaser)
-  - [ ] Public release
+**Found a bug?**
+[Open an issue](https://github.com/foxj77/claudectx/issues) on GitHub
 
-## Contributing
+---
 
-Not accepting contributions yet - project is in early development.
+## Comparison with Other Tools
+
+| Feature | claudectx | cctx | Manual switching |
+|---------|-----------|------|------------------|
+| Interactive selection | ✅ | ❌ | ❌ |
+| Automatic backups | ✅ | ❌ | ❌ |
+| Validation | ✅ | ❌ | ❌ |
+| CLAUDE.md support | ✅ | ❌ | ✅ |
+| Export/import | ✅ | ❌ | ❌ |
+| Shell completion | ✅ | ❌ | ❌ |
+| Health checks | ✅ | ❌ | ❌ |
+| Rollback on error | ✅ | ❌ | ❌ |
+
+---
 
 ## License
 
 MIT License - see [LICENSE](LICENSE)
 
-## Acknowledgments
+---
 
-- [kubectx](https://github.com/ahmetb/kubectx) - For the excellent UX patterns
-- [cctx](https://github.com/nwiizo/cctx) - First attempt at Claude context switching
-- Claude Code community for identifying the need
+## Credits
 
-## Author
+Inspired by [kubectx](https://github.com/ahmetb/kubectx) - the excellent Kubernetes context switcher.
 
-John Fox - [@johnfox](https://github.com/johnfox)
+Built by [John Fox](https://github.com/foxj77) for the Claude Code community.
