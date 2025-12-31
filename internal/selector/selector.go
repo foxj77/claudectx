@@ -39,34 +39,34 @@ func Select(title string, options []Option) (int, error) {
 	// Main selection loop
 	for {
 		// Clear screen and move cursor to top
-		fmt.Print("\033[2J\033[H")
+		fmt.Fprint(os.Stderr, "\033[2J\033[H")
 
 		// Print title
 		if title != "" {
-			fmt.Printf("\033[1m%s\033[0m\n\n", title)
+			fmt.Fprintf(os.Stderr, "\033[1m%s\033[0m\r\n\r\n", title)
 		}
 
 		// Print options
 		for i, opt := range options {
 			if i == selected {
 				// Selected option - highlighted with arrow
-				fmt.Printf("\033[36m❯ %s\033[0m", opt.Label)
+				fmt.Fprintf(os.Stderr, "\033[36m❯ %s\033[0m", opt.Label)
 				if opt.IsCurrent {
-					fmt.Print(" \033[2m(current)\033[0m")
+					fmt.Fprint(os.Stderr, " \033[2m(current)\033[0m")
 				}
-				fmt.Println()
+				fmt.Fprint(os.Stderr, "\r\n")
 			} else {
 				// Unselected option
-				fmt.Print("  ", opt.Label)
+				fmt.Fprintf(os.Stderr, "  %s", opt.Label)
 				if opt.IsCurrent {
-					fmt.Print(" \033[2m(current)\033[0m")
+					fmt.Fprint(os.Stderr, " \033[2m(current)\033[0m")
 				}
-				fmt.Println()
+				fmt.Fprint(os.Stderr, "\r\n")
 			}
 		}
 
 		// Print help text
-		fmt.Print("\n\033[2mUse ↑/↓ to navigate, Enter to select, Esc/Ctrl+C to cancel\033[0m")
+		fmt.Fprint(os.Stderr, "\r\n\033[2mUse ↑/↓ to navigate, Enter to select, Esc/Ctrl+C to cancel\033[0m")
 
 		// Read single byte
 		buf := make([]byte, 3)
@@ -79,13 +79,13 @@ func Select(title string, options []Option) (int, error) {
 		if n == 1 {
 			switch buf[0] {
 			case 13: // Enter
-				fmt.Print("\033[2J\033[H") // Clear screen
+				fmt.Fprint(os.Stderr, "\033[2J\033[H") // Clear screen
 				return selected, nil
 			case 3: // Ctrl+C
-				fmt.Print("\033[2J\033[H") // Clear screen
+				fmt.Fprint(os.Stderr, "\033[2J\033[H") // Clear screen
 				return -1, fmt.Errorf("cancelled")
 			case 27: // ESC
-				fmt.Print("\033[2J\033[H") // Clear screen
+				fmt.Fprint(os.Stderr, "\033[2J\033[H") // Clear screen
 				return -1, fmt.Errorf("cancelled")
 			}
 		} else if n == 3 && buf[0] == 27 && buf[1] == 91 {
