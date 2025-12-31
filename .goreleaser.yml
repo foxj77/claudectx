@@ -1,3 +1,5 @@
+version: 2
+
 project_name: claudectx
 
 before:
@@ -27,9 +29,6 @@ builds:
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
     files:
       - README.md
       - LICENSE
@@ -52,15 +51,14 @@ changelog:
       - Merge branch
 
 brews:
-  - name: claudectx
-    repository:
+  - repository:
       owner: foxj77
       name: homebrew-tap
       token: "{{ .Env.GITHUB_TOKEN }}"
     homepage: "https://github.com/foxj77/claudectx"
     description: "Fast, safe profile switching for Claude Code"
     license: "MIT"
-    folder: Formula
+    directory: Formula
     install: |
       bin.install "claudectx"
 
