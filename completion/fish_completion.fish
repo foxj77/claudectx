@@ -27,5 +27,9 @@ complete -c claudectx -n "__fish_use_subcommand" -a 'import' -d 'Import profile 
 complete -c claudectx -n "__fish_seen_subcommand_from import" -F -d 'Input file'
 complete -c claudectx -n "__fish_seen_subcommand_from import" -x -d 'New profile name'
 
+# Health command
+complete -c claudectx -n "__fish_use_subcommand" -a 'health' -d 'Check profile health'
+complete -c claudectx -n "__fish_seen_subcommand_from health" -a '(__fish_claudectx_profiles)' -d 'Profile to check'
+
 # Profile names for switching
 complete -c claudectx -n "__fish_use_subcommand" -a '(__fish_claudectx_profiles)' -d 'Switch to profile'

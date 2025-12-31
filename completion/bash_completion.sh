@@ -10,7 +10,7 @@ _claudectx() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Main commands and flags
-    opts="-h --help -v --version -c --current -n -d - export import"
+    opts="-h --help -v --version -c --current -n -d - export import health"
 
     # Get list of profiles (if claudectx is in PATH)
     if command -v claudectx &> /dev/null; then
@@ -35,6 +35,11 @@ _claudectx() {
         import)
             # After import, suggest files
             COMPREPLY=( $(compgen -f -X '!*.json' -- ${cur}) )
+            return 0
+            ;;
+        health)
+            # After health, suggest profiles
+            COMPREPLY=( $(compgen -W "${profiles}" -- ${cur}) )
             return 0
             ;;
         claudectx)

@@ -32,6 +32,7 @@ _claudectx() {
                 '-:Switch to previous profile'
                 'export:Export profile to JSON'
                 'import:Import profile from JSON'
+                'health:Check profile health'
             )
 
             # Get profiles
@@ -61,6 +62,9 @@ _claudectx() {
                     else
                         _message 'new profile name (optional)'
                     fi
+                    ;;
+                health)
+                    _claudectx_profiles
                     ;;
             esac
             ;;

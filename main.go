@@ -101,6 +101,16 @@ func main() {
 			os.Exit(1)
 		}
 
+	case "health":
+		args := []string{}
+		if len(os.Args) > 2 {
+			args = os.Args[2:]
+		}
+		if err := cmd.Health(args); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	default:
 		// Assume it's a profile name to switch to
 		if err := cmd.SwitchProfile(s, arg); err != nil {
@@ -122,6 +132,7 @@ USAGE:
   claudectx -d <NAME>              Delete profile
   claudectx export <NAME> [FILE]   Export profile to JSON (stdout if no file)
   claudectx import [FILE] [NAME]   Import profile from JSON (stdin if no file)
+  claudectx health [NAME]          Check profile health (current if no name given)
   claudectx -h, --help             Show this help
   claudectx -v, --version          Show version
 
@@ -135,6 +146,8 @@ EXAMPLES:
   claudectx import work.json       Import profile from file
   claudectx import work.json new   Import and rename to 'new'
   cat work.json | claudectx import Import from stdin
+  claudectx health                 Check current profile health
+  claudectx health work            Check 'work' profile health
 
 WHAT CLAUDECTX MANAGES:
   - ~/.claude/settings.json    User-level settings
