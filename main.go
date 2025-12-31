@@ -20,8 +20,8 @@ func main() {
 
 	// Parse arguments
 	if len(os.Args) < 2 {
-		// Default action: list profiles
-		if err := cmd.ListProfiles(s); err != nil {
+		// Default action: interactive profile selector
+		if err := cmd.ListProfilesInteractive(s); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
@@ -36,6 +36,13 @@ func main() {
 
 	case "-v", "--version":
 		fmt.Printf("claudectx version %s\n", version)
+
+	case "-l", "--list":
+		// Simple list for scripting/piping
+		if err := cmd.ListProfiles(s); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 
 	case "-c", "--current":
 		if err := cmd.ShowCurrent(s); err != nil {
@@ -124,9 +131,10 @@ func printHelp() {
 	help := `claudectx - Fast way to switch between Claude Code configuration profiles
 
 USAGE:
-  claudectx                        List all profiles
+  claudectx                        Interactive profile selector (use ↑/↓ arrows)
   claudectx <NAME>                 Switch to profile
   claudectx -                      Switch to previous profile
+  claudectx -l, --list             Simple list (for scripting/piping)
   claudectx -c, --current          Show current profile
   claudectx -n <NAME>              Create new profile from current config
   claudectx -d <NAME>              Delete profile
@@ -137,8 +145,10 @@ USAGE:
   claudectx -v, --version          Show version
 
 EXAMPLES:
-  claudectx work                   Switch to 'work' profile
+  claudectx                        Open interactive selector
+  claudectx work                   Switch to 'work' profile directly
   claudectx -                      Toggle between current and previous profile
+  claudectx -l                     List all profiles (simple output)
   claudectx -n personal            Create 'personal' profile from current settings
   claudectx -d old-work            Delete 'old-work' profile
   claudectx export work work.json  Export 'work' profile to file
