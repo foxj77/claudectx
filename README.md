@@ -16,6 +16,7 @@ Claude Code doesn't have built-in profile or context switching. If you work with
 
 ## Features
 
+- **Interactive mode**: Arrow key navigation to select profiles
 - **Simple commands**: `claudectx work`, `claudectx -` (toggle)
 - **Comprehensive management**: Settings, auth, MCP servers, CLAUDE.md files
 - **Safe switching**: Automatic backups and validation
@@ -49,14 +50,17 @@ make install
 ## Usage
 
 ```bash
-# List all profiles
+# Interactive mode - use arrow keys to select
 claudectx
 
-# Switch to a profile
+# Switch to a profile directly
 claudectx work
 
 # Toggle to previous profile
 claudectx -
+
+# Simple list (for scripting)
+claudectx -l
 
 # Show current profile
 claudectx -c
