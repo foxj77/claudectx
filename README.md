@@ -24,11 +24,29 @@ Claude Code doesn't have built-in profile or context switching. If you work with
 
 ## Status
 
-🚧 **Currently in development** - Phase 1 (MVP)
+✅ **Phase 2 Complete** - Production ready!
 
-See [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for detailed roadmap.
+- ✅ Phase 1: Core MVP - All commands working
+- ✅ Phase 2: Polish & Safety - Backups, validation, colored output
+- 🔮 Phase 3: Enhancement - fzf, shell completion (planned)
+- 🔮 Phase 4: Distribution - Homebrew, releases (planned)
 
-## Planned Usage
+See [PHASE2_COMPLETE.md](PHASE2_COMPLETE.md) for Phase 2 details.
+
+## Installation
+
+```bash
+# Quick install (no sudo required)
+cd /Users/johnfox/Documents/claudectx
+make install-user
+
+# Or install system-wide
+make install
+
+# See INSTALL.md for detailed instructions
+```
+
+## Usage
 
 ```bash
 # List all profiles
@@ -74,11 +92,11 @@ Coming soon! Will support:
 
 ## Comparison with Existing Tools
 
-| Tool | Scope | Status |
-|------|-------|--------|
-| [cctx](https://github.com/nwiizo/cctx) | settings.json only | Active |
-| Shell aliases | Full config dir | Manual |
-| **claudectx** | Comprehensive, safe | In development |
+| Tool | Scope | Backups | Validation | Status |
+|------|-------|---------|------------|--------|
+| [cctx](https://github.com/nwiizo/cctx) | settings.json only | ❌ | ❌ | Active |
+| Shell aliases | Full config dir | ❌ | ❌ | Manual |
+| **claudectx** | Comprehensive | ✅ Auto | ✅ Full | **Production ready** |
 
 ## Architecture
 
@@ -88,15 +106,19 @@ Profiles are stored in `~/.claude/profiles/`:
 ~/.claude/
 ├── .claudectx-current      # Current profile tracker
 ├── .claudectx-previous     # Previous profile (for toggle)
-├── profiles/
+├── profiles/               # Profile storage
 │   ├── default/
 │   │   ├── settings.json
-│   │   ├── auth.json
-│   │   ├── mcp-servers.json
 │   │   └── CLAUDE.md
 │   ├── work/
 │   └── personal/
-└── settings.json           # Active config (managed by claudectx)
+├── backups/                # Automatic backups (Phase 2)
+│   ├── backup-1234567890/
+│   │   ├── settings.json
+│   │   └── CLAUDE.md
+│   └── backup-1234567891/
+├── settings.json           # Active config (managed by claudectx)
+└── CLAUDE.md               # Active instructions (managed by claudectx)
 ```
 
 ## Development
@@ -114,21 +136,26 @@ go test ./...
 
 ## Roadmap
 
-- [x] Phase 1: Core MVP (in progress)
+- [x] Phase 1: Core MVP ✅
   - [x] Project setup
-  - [ ] Profile storage
-  - [ ] Switch/list/create/delete commands
-- [ ] Phase 2: Polish & Safety
-  - [ ] Validation & backups
-  - [ ] Rollback on failure
-  - [ ] Color output
-- [ ] Phase 3: Enhancement
-  - [ ] fzf integration
-  - [ ] Shell completion
-  - [ ] Export/import
+  - [x] Profile storage
+  - [x] All commands (switch/list/create/delete/toggle/current)
+  - [x] 44 tests, all passing
+- [x] Phase 2: Polish & Safety ✅
+  - [x] Automatic backups
+  - [x] Validation & rollback on failure
+  - [x] Colored output
+  - [x] Better error messages
+  - [x] 68 tests, all passing
+- [ ] Phase 3: Enhancement (optional)
+  - [ ] fzf integration for interactive selection
+  - [ ] Shell completion (bash/zsh/fish)
+  - [ ] Export/import profiles
+  - [ ] Health checks
 - [ ] Phase 4: Distribution
   - [ ] Homebrew formula
-  - [ ] Release automation
+  - [ ] Release automation (GoReleaser)
+  - [ ] Public release
 
 ## Contributing
 
