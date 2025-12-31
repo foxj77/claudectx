@@ -71,6 +71,36 @@ func main() {
 			os.Exit(1)
 		}
 
+	case "export":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: profile name required")
+			fmt.Fprintln(os.Stderr, "Usage: claudectx export <name> [output-file]")
+			os.Exit(1)
+		}
+		profileName := os.Args[2]
+		outputPath := ""
+		if len(os.Args) > 3 {
+			outputPath = os.Args[3]
+		}
+		if err := cmd.ExportProfile(s, profileName, outputPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+	case "import":
+		inputPath := ""
+		newName := ""
+		if len(os.Args) > 2 {
+			inputPath = os.Args[2]
+		}
+		if len(os.Args) > 3 {
+			newName = os.Args[3]
+		}
+		if err := cmd.ImportProfile(s, inputPath, newName); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	default:
 		// Assume it's a profile name to switch to
 		if err := cmd.SwitchProfile(s, arg); err != nil {
@@ -84,24 +114,32 @@ func printHelp() {
 	help := `claudectx - Fast way to switch between Claude Code configuration profiles
 
 USAGE:
-  claudectx                List all profiles
-  claudectx <NAME>         Switch to profile
-  claudectx -              Switch to previous profile
-  claudectx -c, --current  Show current profile
-  claudectx -n <NAME>      Create new profile from current config
-  claudectx -d <NAME>      Delete profile
-  claudectx -h, --help     Show this help
-  claudectx -v, --version  Show version
+  claudectx                        List all profiles
+  claudectx <NAME>                 Switch to profile
+  claudectx -                      Switch to previous profile
+  claudectx -c, --current          Show current profile
+  claudectx -n <NAME>              Create new profile from current config
+  claudectx -d <NAME>              Delete profile
+  claudectx export <NAME> [FILE]   Export profile to JSON (stdout if no file)
+  claudectx import [FILE] [NAME]   Import profile from JSON (stdin if no file)
+  claudectx -h, --help             Show this help
+  claudectx -v, --version          Show version
 
 EXAMPLES:
-  claudectx work           Switch to 'work' profile
-  claudectx -              Toggle between current and previous profile
-  claudectx -n personal    Create 'personal' profile from current settings
-  claudectx -d old-work    Delete 'old-work' profile
+  claudectx work                   Switch to 'work' profile
+  claudectx -                      Toggle between current and previous profile
+  claudectx -n personal            Create 'personal' profile from current settings
+  claudectx -d old-work            Delete 'old-work' profile
+  claudectx export work work.json  Export 'work' profile to file
+  claudectx export work            Export to stdout (for piping)
+  claudectx import work.json       Import profile from file
+  claudectx import work.json new   Import and rename to 'new'
+  cat work.json | claudectx import Import from stdin
 
 WHAT CLAUDECTX MANAGES:
   - ~/.claude/settings.json    User-level settings
   - ~/.claude/CLAUDE.md        Global instructions
+  - Automatic backups in ~/.claude/backups/
 
 Profiles are stored in ~/.claude/profiles/
 
