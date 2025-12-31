@@ -4,8 +4,9 @@
 
 Switch between Claude Code configurations in seconds. Perfect for managing multiple accounts, API providers, or client-specific settings.
 
-![Version](https://img.shields.io/badge/version-0.4.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![Tests](https://img.shields.io/badge/tests-85%2B%20passing-brightgreen)
 
 ---
 
@@ -67,9 +68,10 @@ claudectx -
 ### macOS / Linux (Homebrew)
 
 ```bash
-# Coming soon in v1.0.0
 brew install foxj77/tap/claudectx
 ```
+
+This will install claudectx and shell completions automatically.
 
 ### Manual Installation
 
@@ -105,9 +107,14 @@ sudo make install
 
 This installs to `/usr/local/bin/claudectx`.
 
-**Option 3: Download binary (coming in v1.0.0)**
+**Option 3: Download pre-built binary**
 
-Download pre-built binaries from the [releases page](https://github.com/foxj77/claudectx/releases).
+Download pre-built binaries for your platform from the [releases page](https://github.com/foxj77/claudectx/releases).
+
+Available for:
+- macOS (Intel and Apple Silicon)
+- Linux (x64 and ARM64)
+- Windows (x64)
 
 ---
 

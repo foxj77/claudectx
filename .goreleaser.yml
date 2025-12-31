@@ -1,0 +1,94 @@
+project_name: claudectx
+
+before:
+  hooks:
+    - go mod download
+    - go test ./...
+
+builds:
+  - id: claudectx
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # Skip windows/arm64 for now (less common)
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    binary: claudectx
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - completion/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+
+brews:
+  - name: claudectx
+    repository:
+      owner: foxj77
+      name: homebrew-tap
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    homepage: "https://github.com/foxj77/claudectx"
+    description: "Fast, safe profile switching for Claude Code"
+    license: "MIT"
+    folder: Formula
+    install: |
+      bin.install "claudectx"
+
+      # Install shell completions
+      bash_completion.install "completion/bash_completion.sh" => "claudectx"
+      zsh_completion.install "completion/zsh_completion.sh" => "_claudectx"
+      fish_completion.install "completion/fish_completion.fish"
+    test: |
+      system "#{bin}/claudectx", "--version"
+
+release:
+  github:
+    owner: foxj77
+    name: claudectx
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
+  footer: |
+    ## Installation
+
+    ### Homebrew (macOS/Linux)
+    ```bash
+    brew install foxj77/tap/claudectx
+    ```
+
+    ### Manual Installation
+    Download the appropriate binary for your platform and extract it to a directory in your PATH.
+
+    ---
+
+    **Full Changelog**: https://github.com/foxj77/claudectx/compare/{{ .PreviousTag }}...{{ .Tag }}
