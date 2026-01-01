@@ -4,7 +4,7 @@
 
 Switch between Claude Code configurations in seconds. Perfect for managing multiple accounts, API providers, or client-specific settings.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Tests](https://img.shields.io/badge/tests-85%2B%20passing-brightgreen)
 
