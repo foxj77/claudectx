@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-01-01
+
+### Added
+- **Auto-sync on profile switch**: Automatically saves active configuration changes to current profile before switching
+- **Manual sync command**: `claudectx sync` to manually save changes to a profile
+- **Change detection**: MD5-based hashing to efficiently detect configuration differences
+- **Rename command**: `-r/--rename` flag to rename existing profiles
+- **Coverage files to .gitignore**: Added coverage.txt, coverage.html, and temp files
+
+### Changed
+- Profile switching now automatically syncs changes before switching to prevent data loss
+- Updated help text to reflect auto-sync behavior
+- All Go files formatted with `gofmt -s` to pass lint checks
+
+### Fixed
+- GitHub Actions lint job now passes (Go formatting issues resolved)
+- Test coverage artifacts now properly ignored in version control
+
+### Features
+- **Auto-Sync**: When switching profiles, detects if active config differs from current profile and automatically saves changes
+- **Manual Sync**: Use `claudectx sync` to save current changes to current profile, or `claudectx sync <profile>` for a specific profile
+- **Rename Profiles**: `claudectx -r old-name new-name` to rename any profile
+- **Silent Operation**: Auto-sync happens without prompts, with informative messages
+
+### Technical Details
+- Change detection uses MD5 hashing for efficient comparison
+- Sync operations preserve profile metadata (timestamps)
+- Graceful error handling if sync fails (continues with switch anyway)
+
 ## [1.0.0] - 2025-12-31
 
 ### Added
@@ -81,7 +110,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Profile storage in `~/.claude/profiles/`
 - Basic test suite (44 tests)
 
-[Unreleased]: https://github.com/foxj77/claudectx/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/foxj77/claudectx/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/foxj77/claudectx/releases/tag/v1.1.0
 [1.0.0]: https://github.com/foxj77/claudectx/releases/tag/v1.0.0
 [0.4.0]: https://github.com/foxj77/claudectx/releases/tag/v0.4.0
 [0.3.0]: https://github.com/foxj77/claudectx/releases/tag/v0.3.0
