@@ -75,7 +75,7 @@ func TestColorize(t *testing.T) {
 		{
 			name:  "cyan text",
 			text:  "current",
-			color:  Cyan,
+			color: Cyan,
 			want:  "\033[36mcurrent\033[0m",
 		},
 	}

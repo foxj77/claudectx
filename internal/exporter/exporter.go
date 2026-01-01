@@ -17,11 +17,11 @@ const ExportVersion = "1.0.0"
 
 // ExportedProfile represents a profile in export format
 type ExportedProfile struct {
-	Version    string            `json:"version"`
-	Name       string            `json:"name"`
-	Settings   *config.Settings  `json:"settings"`
-	ClaudeMD   string            `json:"claude_md,omitempty"`
-	ExportedAt string            `json:"exported_at"`
+	Version    string           `json:"version"`
+	Name       string           `json:"name"`
+	Settings   *config.Settings `json:"settings"`
+	ClaudeMD   string           `json:"claude_md,omitempty"`
+	ExportedAt string           `json:"exported_at"`
 }
 
 // ExportProfile exports a profile to JSON format

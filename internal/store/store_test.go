@@ -302,7 +302,7 @@ func TestTogglePattern(t *testing.T) {
 	// Toggle back
 	oldCurrent, _ = store.GetCurrent()
 	oldPrev, _ := store.GetPrevious()
-	store.SetCurrent(oldPrev)   // Switch to "work"
+	store.SetCurrent(oldPrev)     // Switch to "work"
 	store.SetPrevious(oldCurrent) // Save "personal" as previous
 
 	current, _ = store.GetCurrent()

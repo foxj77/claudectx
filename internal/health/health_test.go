@@ -8,27 +8,27 @@ import (
 
 func TestCheckSettings(t *testing.T) {
 	tests := []struct {
-		name     string
-		settings *config.Settings
-		wantErr  bool
+		name         string
+		settings     *config.Settings
+		wantErr      bool
 		wantWarnings bool
 	}{
 		{
-			name:     "valid settings with model",
-			settings: &config.Settings{Model: "opus"},
-			wantErr:  false,
+			name:         "valid settings with model",
+			settings:     &config.Settings{Model: "opus"},
+			wantErr:      false,
 			wantWarnings: false,
 		},
 		{
-			name:     "empty settings",
-			settings: &config.Settings{},
-			wantErr:  false,
+			name:         "empty settings",
+			settings:     &config.Settings{},
+			wantErr:      false,
 			wantWarnings: true, // Warning about no model set
 		},
 		{
-			name:     "nil settings",
-			settings: nil,
-			wantErr:  true,
+			name:         "nil settings",
+			settings:     nil,
+			wantErr:      true,
 			wantWarnings: false,
 		},
 		{
@@ -37,7 +37,7 @@ func TestCheckSettings(t *testing.T) {
 				Model: "sonnet",
 				Env:   map[string]string{"API_KEY": "test"},
 			},
-			wantErr:  false,
+			wantErr:      false,
 			wantWarnings: false,
 		},
 	}
@@ -115,9 +115,9 @@ func TestCheckModel(t *testing.T) {
 
 func TestCheckPermissions(t *testing.T) {
 	tests := []struct {
-		name      string
-		perms     *config.Permissions
-		wantValid bool
+		name         string
+		perms        *config.Permissions
+		wantValid    bool
 		wantWarnings bool
 	}{
 		{
@@ -261,9 +261,9 @@ func TestCheckProfileNilSettings(t *testing.T) {
 
 func TestHealthResult(t *testing.T) {
 	result := HealthResult{
-		IsValid: true,
+		IsValid:  true,
 		Warnings: []string{"Warning 1", "Warning 2"},
-		Error: nil,
+		Error:    nil,
 	}
 
 	if !result.IsHealthy() {
@@ -277,7 +277,7 @@ func TestHealthResult(t *testing.T) {
 	// Test with error
 	resultWithError := HealthResult{
 		IsValid: false,
-		Error: &HealthError{Message: "test error"},
+		Error:   &HealthError{Message: "test error"},
 	}
 
 	if resultWithError.IsHealthy() {

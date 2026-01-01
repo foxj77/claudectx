@@ -78,6 +78,17 @@ func main() {
 			os.Exit(1)
 		}
 
+	case "-r", "--rename":
+		if len(os.Args) < 4 {
+			fmt.Fprintln(os.Stderr, "Error: both old and new profile names required")
+			fmt.Fprintln(os.Stderr, "Usage: claudectx -r <old-name> <new-name>")
+			os.Exit(1)
+		}
+		if err := cmd.RenameProfile(s, os.Args[2], os.Args[3]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
 	case "export":
 		if len(os.Args) < 3 {
 			fmt.Fprintln(os.Stderr, "Error: profile name required")

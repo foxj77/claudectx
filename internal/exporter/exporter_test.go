@@ -224,7 +224,7 @@ func TestExportedProfileJSON(t *testing.T) {
 		Settings: &config.Settings{
 			Model: "opus",
 		},
-		ClaudeMD:  "# Instructions",
+		ClaudeMD:   "# Instructions",
 		ExportedAt: "2024-01-01T00:00:00Z",
 	}
 
