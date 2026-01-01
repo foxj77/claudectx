@@ -129,6 +129,25 @@ func main() {
 			os.Exit(1)
 		}
 
+	case "sync":
+		profileName := ""
+		if len(os.Args) > 2 {
+			profileName = os.Args[2]
+		}
+		if profileName == "" {
+			// Sync to current profile
+			if err := cmd.SyncCurrentProfile(s); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			// Sync to specified profile
+			if err := cmd.SyncProfile(s, profileName); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
 	default:
 		// Assume it's a profile name to switch to
 		if err := cmd.SwitchProfile(s, arg); err != nil {
@@ -143,12 +162,14 @@ func printHelp() {
 
 USAGE:
   claudectx                        Interactive profile selector (use ↑/↓ arrows)
-  claudectx <NAME>                 Switch to profile
+  claudectx <NAME>                 Switch to profile (auto-syncs current changes first)
   claudectx -                      Switch to previous profile
   claudectx -l, --list             Simple list (for scripting/piping)
   claudectx -c, --current          Show current profile
   claudectx -n <NAME>              Create new profile from current config
   claudectx -d <NAME>              Delete profile
+  claudectx -r <OLD> <NEW>         Rename profile
+  claudectx sync [NAME]            Sync active config to profile (current if no name)
   claudectx export <NAME> [FILE]   Export profile to JSON (stdout if no file)
   claudectx import [FILE] [NAME]   Import profile from JSON (stdin if no file)
   claudectx health [NAME]          Check profile health (current if no name given)
@@ -157,11 +178,14 @@ USAGE:
 
 EXAMPLES:
   claudectx                        Open interactive selector
-  claudectx work                   Switch to 'work' profile directly
+  claudectx work                   Switch to 'work' profile (auto-syncs changes first)
   claudectx -                      Toggle between current and previous profile
   claudectx -l                     List all profiles (simple output)
   claudectx -n personal            Create 'personal' profile from current settings
   claudectx -d old-work            Delete 'old-work' profile
+  claudectx -r old-name new-name   Rename profile from 'old-name' to 'new-name'
+  claudectx sync                   Save active config changes to current profile
+  claudectx sync work              Save active config to 'work' profile
   claudectx export work work.json  Export 'work' profile to file
   claudectx export work            Export to stdout (for piping)
   claudectx import work.json       Import profile from file

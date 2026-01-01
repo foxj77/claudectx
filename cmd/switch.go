@@ -61,10 +61,27 @@ func SwitchProfile(s *store.Store, name string) error {
 		printer.Info("Created backup: %s", backupID)
 	}
 
-	// Get current profile name (for previous tracking)
+	// Get current profile name (for previous tracking and auto-sync)
 	currentName, err := s.GetCurrent()
 	if err != nil {
 		return fmt.Errorf("failed to get current profile: %w", err)
+	}
+
+	// Auto-sync: Save current changes back to current profile before switching
+	if currentName != "" && currentName != name {
+		changed, err := hasConfigChanged(s, currentName)
+		if err != nil {
+			printer.Warning("Warning: Could not detect config changes: %v", err)
+		} else if changed {
+			printer.Info("Auto-syncing changes to profile %q...", currentName)
+			err := syncCurrentProfile(s, currentName)
+			if err != nil {
+				printer.Warning("Warning: Failed to auto-sync profile: %v", err)
+				printer.Warning("Continuing with switch anyway...")
+			} else {
+				printer.Success("Auto-synced %d changes to profile %q", 1, currentName)
+			}
+		}
 	}
 
 	// Save settings to active location
