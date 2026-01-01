@@ -32,4 +32,9 @@ jobs:
           version: '~> v2'
           args: release --clean
         env:
+          # GITHUB_TOKEN is used for publishing to the current repo
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use a PAT for homebrew-tap repository access
+          # Create a PAT at https://github.com/settings/tokens with 'repo' scope
+          # and add it as a repository secret named HOMEBREW_TAP_TOKEN
+          GITHUB_TOKEN_FOR_HOMEBREW_TAP: ${{ secrets.HOMEBREW_TAP_TOKEN }}

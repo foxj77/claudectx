@@ -54,7 +54,8 @@ brews:
   - repository:
       owner: foxj77
       name: homebrew-tap
-      token: "{{ .Env.GITHUB_TOKEN }}"
+      # Use PAT for cross-repo push
+      token: "{{ .Env.GITHUB_TOKEN_FOR_HOMEBREW_TAP }}"
     homepage: "https://github.com/foxj77/claudectx"
     description: "Fast, safe profile switching for Claude Code"
     license: "MIT"
