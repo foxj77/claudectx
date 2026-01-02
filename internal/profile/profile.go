@@ -6,38 +6,42 @@ import (
 	"time"
 
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 )
 
 // Profile represents a complete Claude configuration profile
 type Profile struct {
-	Name      string
-	Settings  *config.Settings
-	ClaudeMD  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Name       string
+	Settings   *config.Settings
+	ClaudeMD   string
+	MCPServers mcpconfig.MCPServers
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // NewProfile creates a new empty profile with the given name
 func NewProfile(name string) *Profile {
 	now := time.Now()
 	return &Profile{
-		Name:      name,
-		Settings:  &config.Settings{Env: make(map[string]string)},
-		ClaudeMD:  "",
-		CreatedAt: now,
-		UpdatedAt: now,
+		Name:       name,
+		Settings:   &config.Settings{Env: make(map[string]string)},
+		ClaudeMD:   "",
+		MCPServers: make(mcpconfig.MCPServers),
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 }
 
 // ProfileFromCurrent creates a profile from current configuration
-func ProfileFromCurrent(name string, settings *config.Settings, claudeMD string) *Profile {
+func ProfileFromCurrent(name string, settings *config.Settings, claudeMD string, mcpServers mcpconfig.MCPServers) *Profile {
 	now := time.Now()
 	return &Profile{
-		Name:      name,
-		Settings:  settings,
-		ClaudeMD:  claudeMD,
-		CreatedAt: now,
-		UpdatedAt: now,
+		Name:       name,
+		Settings:   settings,
+		ClaudeMD:   claudeMD,
+		MCPServers: mcpServers,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 }
 
@@ -71,8 +75,9 @@ func (p *Profile) IsEmpty() bool {
 	hasPermissions := p.Settings.Permissions != nil &&
 		(len(p.Settings.Permissions.Allow) > 0 || len(p.Settings.Permissions.Deny) > 0)
 	hasClaudeMD := strings.TrimSpace(p.ClaudeMD) != ""
+	hasMCPServers := len(p.MCPServers) > 0
 
-	return !hasModel && !hasEnv && !hasPermissions && !hasClaudeMD
+	return !hasModel && !hasEnv && !hasPermissions && !hasClaudeMD && !hasMCPServers
 }
 
 // ValidateProfileName checks if a profile name is valid

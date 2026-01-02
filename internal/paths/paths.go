@@ -72,6 +72,16 @@ func ClaudeMDFile() (string, error) {
 	return filepath.Join(claudeDir, "CLAUDE.md"), nil
 }
 
+// ClaudeJSONFile returns the path to the Claude JSON config file (~/.claude.json)
+// This file contains user-scoped MCP server configurations among other settings
+func ClaudeJSONFile() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".claude.json"), nil
+}
+
 // ProfileFile returns the path to a specific file within a profile directory
 func ProfileFile(profileName, filename string) (string, error) {
 	profileDir, err := ProfileDir(profileName)

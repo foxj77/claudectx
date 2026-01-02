@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 	"github.com/johnfox/claudectx/internal/paths"
 	"github.com/johnfox/claudectx/internal/printer"
 	"github.com/johnfox/claudectx/internal/profile"
@@ -59,8 +60,20 @@ func CreateProfile(s *store.Store, name string) error {
 		}
 	}
 
+	// Load current MCP servers from ~/.claude.json
+	claudeJSONPath, err := paths.ClaudeJSONFile()
+	if err != nil {
+		return fmt.Errorf("failed to get claude.json path: %w", err)
+	}
+
+	mcpServers, err := mcpconfig.LoadMCPServers(claudeJSONPath)
+	if err != nil {
+		// If we can't load MCP servers, just use empty
+		mcpServers = make(mcpconfig.MCPServers)
+	}
+
 	// Create the profile
-	prof := profile.ProfileFromCurrent(name, settings, claudeMD)
+	prof := profile.ProfileFromCurrent(name, settings, claudeMD, mcpServers)
 
 	// Save it
 	err = s.Save(prof)
@@ -82,6 +95,9 @@ func CreateProfile(s *store.Store, name string) error {
 	}
 	if claudeMD != "" {
 		printer.Info("  CLAUDE.md included: yes")
+	}
+	if len(mcpServers) > 0 {
+		printer.Info("  MCP servers: %d", len(mcpServers))
 	}
 
 	return nil

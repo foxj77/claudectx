@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 )
 
 func TestNewProfile(t *testing.T) {
@@ -42,7 +43,14 @@ func TestProfileFromCurrent(t *testing.T) {
 		},
 	}
 
-	profile := ProfileFromCurrent("my-profile", settings, "# Claude Instructions")
+	mcpServers := mcpconfig.MCPServers{
+		"test-server": mcpconfig.MCPServer{
+			Type:    "stdio",
+			Command: "/usr/bin/test",
+		},
+	}
+
+	profile := ProfileFromCurrent("my-profile", settings, "# Claude Instructions", mcpServers)
 
 	if profile.Name != "my-profile" {
 		t.Errorf("Name = %q, want %q", profile.Name, "my-profile")
@@ -54,6 +62,10 @@ func TestProfileFromCurrent(t *testing.T) {
 
 	if profile.ClaudeMD != "# Claude Instructions" {
 		t.Errorf("ClaudeMD = %q, want %q", profile.ClaudeMD, "# Claude Instructions")
+	}
+
+	if len(profile.MCPServers) != 1 {
+		t.Errorf("MCPServers length = %d, want 1", len(profile.MCPServers))
 	}
 
 	if profile.CreatedAt.IsZero() {
@@ -174,6 +186,20 @@ func TestProfileIsEmpty(t *testing.T) {
 				Settings: &config.Settings{
 					Permissions: &config.Permissions{
 						Allow: []string{"WebSearch"},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "profile with mcp servers",
+			profile: &Profile{
+				Name:     "with-mcp",
+				Settings: &config.Settings{},
+				MCPServers: mcpconfig.MCPServers{
+					"test-server": mcpconfig.MCPServer{
+						Type:    "stdio",
+						Command: "/usr/bin/test",
 					},
 				},
 			},

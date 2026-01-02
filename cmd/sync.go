@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 	"github.com/johnfox/claudectx/internal/paths"
 	"github.com/johnfox/claudectx/internal/printer"
 	"github.com/johnfox/claudectx/internal/store"
@@ -48,12 +49,24 @@ func hasConfigChanged(s *store.Store, profileName string) (bool, error) {
 		activeClaudeMD = string(content)
 	}
 
+	// Read active MCP servers from ~/.claude.json
+	claudeJSONPath, err := paths.ClaudeJSONFile()
+	if err != nil {
+		return false, err
+	}
+
+	activeMCPServers, err := mcpconfig.LoadMCPServers(claudeJSONPath)
+	if err != nil {
+		// If file doesn't exist or can't be read, consider it changed
+		return true, nil
+	}
+
 	// Compare by hashing (more efficient than deep comparison)
-	return !profilesEqual(activeSettings, activeClaudeMD, stored.Settings, stored.ClaudeMD), nil
+	return !profilesEqual(activeSettings, activeClaudeMD, activeMCPServers, stored.Settings, stored.ClaudeMD, stored.MCPServers), nil
 }
 
 // profilesEqual compares two profile configurations by content hash
-func profilesEqual(settings1 *config.Settings, claudeMD1 string, settings2 *config.Settings, claudeMD2 string) bool {
+func profilesEqual(settings1 *config.Settings, claudeMD1 string, mcp1 mcpconfig.MCPServers, settings2 *config.Settings, claudeMD2 string, mcp2 mcpconfig.MCPServers) bool {
 	// Hash settings
 	hash1 := hashSettings(settings1)
 	hash2 := hashSettings(settings2)
@@ -66,7 +79,15 @@ func profilesEqual(settings1 *config.Settings, claudeMD1 string, settings2 *conf
 	hashMD1 := hashString(claudeMD1)
 	hashMD2 := hashString(claudeMD2)
 
-	return hashMD1 == hashMD2
+	if hashMD1 != hashMD2 {
+		return false
+	}
+
+	// Hash MCP servers
+	hashMCP1 := hashMCPServers(mcp1)
+	hashMCP2 := hashMCPServers(mcp2)
+
+	return hashMCP1 == hashMCP2
 }
 
 // hashSettings creates a hash of settings for comparison
@@ -87,6 +108,21 @@ func hashSettings(settings *config.Settings) string {
 // hashString creates a hash of a string for comparison
 func hashString(s string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(s)))
+}
+
+// hashMCPServers creates a hash of MCP servers for comparison
+func hashMCPServers(servers mcpconfig.MCPServers) string {
+	if servers == nil || len(servers) == 0 {
+		return "empty"
+	}
+
+	// Marshal to JSON for consistent hashing
+	data, err := json.Marshal(servers)
+	if err != nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%x", md5.Sum(data))
 }
 
 // syncCurrentProfile saves the active configuration back to the current profile
@@ -117,6 +153,18 @@ func syncCurrentProfile(s *store.Store, profileName string) error {
 		activeClaudeMD = string(content)
 	}
 
+	// Read active MCP servers from ~/.claude.json
+	claudeJSONPath, err := paths.ClaudeJSONFile()
+	if err != nil {
+		return fmt.Errorf("failed to get claude.json path: %w", err)
+	}
+
+	activeMCPServers, err := mcpconfig.LoadMCPServers(claudeJSONPath)
+	if err != nil {
+		// If file doesn't exist or can't be read, use empty servers
+		activeMCPServers = make(mcpconfig.MCPServers)
+	}
+
 	// Load the existing profile to update it
 	prof, err := s.Load(profileName)
 	if err != nil {
@@ -126,6 +174,7 @@ func syncCurrentProfile(s *store.Store, profileName string) error {
 	// Update the profile with active configuration
 	prof.Settings = activeSettings
 	prof.ClaudeMD = activeClaudeMD
+	prof.MCPServers = activeMCPServers
 	prof.Touch()
 
 	// Save the updated profile

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-01-02
+
+### Added
+- **MCP server configuration support**: Profiles now manage user-scoped MCP server configurations from `~/.claude.json`
+- New `internal/mcpconfig` package for reading/writing MCP servers
+- MCP servers are now included in profile exports/imports
+- MCP servers are backed up and restored with profiles
+
+### Changed
+- Profile struct now includes `MCPServers` field
+- Help text updated to show MCP server management
+- Export format now includes `mcp_servers` field (backwards compatible)
+
+### Technical Details
+- MCP servers are stored as `mcp.json` in each profile directory
+- Only the `mcpServers` field in `~/.claude.json` is modified (other data preserved)
+- Empty MCP servers result in the field being removed from `~/.claude.json`
+
 ## [1.1.0] - 2026-01-01
 
 ### Added

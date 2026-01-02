@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 	"github.com/johnfox/claudectx/internal/paths"
 )
 
@@ -84,6 +85,24 @@ func (m *Manager) Create() (string, error) {
 		}
 	}
 
+	// Backup MCP servers from ~/.claude.json
+	claudeJSONPath, err := paths.ClaudeJSONFile()
+	if err != nil {
+		return "", err
+	}
+
+	if config.FileExists(claudeJSONPath) {
+		mcpServers, err := mcpconfig.LoadMCPServers(claudeJSONPath)
+		if err == nil && len(mcpServers) > 0 {
+			destMCP := filepath.Join(backupPath, "mcp.json")
+			err = mcpconfig.SaveToFile(destMCP, mcpServers)
+			if err != nil {
+				os.RemoveAll(backupPath) // Clean up on failure
+				return "", fmt.Errorf("failed to backup MCP servers: %w", err)
+			}
+		}
+	}
+
 	return backupID, nil
 }
 
@@ -126,6 +145,32 @@ func (m *Manager) Restore(backupID string) error {
 		// If CLAUDE.md wasn't in backup, remove it if it exists
 		if config.FileExists(claudeMDPath) {
 			os.Remove(claudeMDPath)
+		}
+	}
+
+	// Restore MCP servers if they were backed up
+	backupMCP := filepath.Join(backupPath, "mcp.json")
+	claudeJSONPath, err := paths.ClaudeJSONFile()
+	if err != nil {
+		return err
+	}
+
+	if config.FileExists(backupMCP) {
+		mcpServers, err := mcpconfig.LoadFromFile(backupMCP)
+		if err != nil {
+			return fmt.Errorf("failed to load backup MCP servers: %w", err)
+		}
+		err = mcpconfig.SaveMCPServers(claudeJSONPath, mcpServers)
+		if err != nil {
+			return fmt.Errorf("failed to restore MCP servers: %w", err)
+		}
+	} else {
+		// If MCP servers weren't in backup, remove them from ~/.claude.json
+		if config.FileExists(claudeJSONPath) {
+			err = mcpconfig.SaveMCPServers(claudeJSONPath, make(mcpconfig.MCPServers))
+			if err != nil {
+				return fmt.Errorf("failed to clear MCP servers: %w", err)
+			}
 		}
 	}
 

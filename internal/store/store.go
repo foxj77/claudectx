@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 	"github.com/johnfox/claudectx/internal/paths"
 	"github.com/johnfox/claudectx/internal/profile"
 )
@@ -70,6 +71,24 @@ func (s *Store) Save(prof *profile.Profile) error {
 		}
 	}
 
+	// Save mcp.json if MCP servers are present
+	mcpPath, err := paths.ProfileFile(prof.Name, "mcp.json")
+	if err != nil {
+		return err
+	}
+
+	if len(prof.MCPServers) > 0 {
+		err = mcpconfig.SaveToFile(mcpPath, prof.MCPServers)
+		if err != nil {
+			return fmt.Errorf("failed to save mcp.json: %w", err)
+		}
+	} else {
+		// Remove mcp.json if it exists but profile has no MCP servers
+		if config.FileExists(mcpPath) {
+			os.Remove(mcpPath)
+		}
+	}
+
 	return nil
 }
 
@@ -105,6 +124,20 @@ func (s *Store) Load(name string) (*profile.Profile, error) {
 			return nil, fmt.Errorf("failed to read CLAUDE.md: %w", err)
 		}
 		prof.ClaudeMD = string(content)
+	}
+
+	// Load mcp.json if it exists
+	mcpPath, err := paths.ProfileFile(name, "mcp.json")
+	if err != nil {
+		return nil, err
+	}
+
+	if config.FileExists(mcpPath) {
+		servers, err := mcpconfig.LoadFromFile(mcpPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load mcp.json: %w", err)
+		}
+		prof.MCPServers = servers
 	}
 
 	return prof, nil

@@ -8,7 +8,7 @@ import (
 	"github.com/johnfox/claudectx/internal/store"
 )
 
-const version = "1.0.0"
+const version = "1.2.0"
 
 func main() {
 	// Initialize store
@@ -197,6 +197,7 @@ EXAMPLES:
 WHAT CLAUDECTX MANAGES:
   - ~/.claude/settings.json    User-level settings
   - ~/.claude/CLAUDE.md        Global instructions
+  - ~/.claude.json mcpServers  User-scoped MCP server configs
   - Automatic backups in ~/.claude/backups/
 
 Profiles are stored in ~/.claude/profiles/

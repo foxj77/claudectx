@@ -6,6 +6,7 @@ import (
 
 	"github.com/johnfox/claudectx/internal/backup"
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 	"github.com/johnfox/claudectx/internal/paths"
 	"github.com/johnfox/claudectx/internal/printer"
 	"github.com/johnfox/claudectx/internal/profile"
@@ -116,6 +117,19 @@ func SwitchProfile(s *store.Store, name string) error {
 		if config.FileExists(claudeMDPath) {
 			os.Remove(claudeMDPath)
 		}
+	}
+
+	// Handle MCP servers in ~/.claude.json
+	claudeJSONPath, err := paths.ClaudeJSONFile()
+	if err != nil {
+		rollback(backupMgr, backupID)
+		return fmt.Errorf("failed to get claude.json path: %w", err)
+	}
+
+	err = mcpconfig.SaveMCPServers(claudeJSONPath, prof.MCPServers)
+	if err != nil {
+		rollback(backupMgr, backupID)
+		return fmt.Errorf("failed to save MCP servers: %w", err)
 	}
 
 	// Update previous profile (if there was a current one)

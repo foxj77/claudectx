@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/johnfox/claudectx/internal/config"
+	"github.com/johnfox/claudectx/internal/mcpconfig"
 	"github.com/johnfox/claudectx/internal/profile"
 	"github.com/johnfox/claudectx/internal/store"
 	"github.com/johnfox/claudectx/internal/validator"
@@ -17,11 +18,12 @@ const ExportVersion = "1.0.0"
 
 // ExportedProfile represents a profile in export format
 type ExportedProfile struct {
-	Version    string           `json:"version"`
-	Name       string           `json:"name"`
-	Settings   *config.Settings `json:"settings"`
-	ClaudeMD   string           `json:"claude_md,omitempty"`
-	ExportedAt string           `json:"exported_at"`
+	Version    string               `json:"version"`
+	Name       string               `json:"name"`
+	Settings   *config.Settings     `json:"settings"`
+	ClaudeMD   string               `json:"claude_md,omitempty"`
+	MCPServers mcpconfig.MCPServers `json:"mcp_servers,omitempty"`
+	ExportedAt string               `json:"exported_at"`
 }
 
 // ExportProfile exports a profile to JSON format
@@ -43,6 +45,7 @@ func ExportProfile(s *store.Store, profileName string, w io.Writer) error {
 		Name:       profileName,
 		Settings:   prof.Settings,
 		ClaudeMD:   prof.ClaudeMD,
+		MCPServers: prof.MCPServers,
 		ExportedAt: time.Now().UTC().Format(time.RFC3339),
 	}
 
@@ -93,8 +96,14 @@ func ImportProfile(s *store.Store, r io.Reader, newName string) error {
 		return fmt.Errorf("imported CLAUDE.md is invalid: %w", err)
 	}
 
+	// Handle nil MCPServers from old exports
+	mcpServers := exported.MCPServers
+	if mcpServers == nil {
+		mcpServers = make(mcpconfig.MCPServers)
+	}
+
 	// Create profile from imported data
-	prof := profile.ProfileFromCurrent(profileName, exported.Settings, exported.ClaudeMD)
+	prof := profile.ProfileFromCurrent(profileName, exported.Settings, exported.ClaudeMD, mcpServers)
 
 	// Save the profile
 	err = s.Save(prof)
