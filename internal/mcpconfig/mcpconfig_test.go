@@ -25,7 +25,9 @@ func TestLoadMCPServers_FileNotExists(t *testing.T) {
 func TestLoadMCPServers_InvalidJSON(t *testing.T) {
 	tmp := t.TempDir()
 	path := filepath.Join(tmp, "claude.json")
-	_ = os.WriteFile(path, []byte("not-json"), 0644)
+	if err := os.WriteFile(path, []byte("not-json"), 0644); err != nil {
+		t.Fatalf("failed to write invalid json file: %v", err)
+	}
 
 	_, err := LoadMCPServers(path)
 	if err == nil {
