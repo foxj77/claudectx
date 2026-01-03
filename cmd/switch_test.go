@@ -69,8 +69,13 @@ func TestSwitchProfile_Success(t *testing.T) {
 	}
 
 	// Ensure there is an existing active settings file to be backed up
-	settingsPath, _ := paths.SettingsFile()
-	_ = os.WriteFile(settingsPath, []byte(`{"model":"existing"}`), 0644)
+	settingsPath, err := paths.SettingsFile()
+	if err != nil {
+		t.Fatalf("failed to determine settings file path: %v", err)
+	}
+	if err := os.WriteFile(settingsPath, []byte(`{"model":"existing"}`), 0644); err != nil {
+		t.Fatalf("failed to write initial settings file: %v", err)
+	}
 
 	// Run switch
 	if err := SwitchProfile(s, "work"); err != nil {
