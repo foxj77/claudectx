@@ -141,6 +141,9 @@ func TestSwitchProfile_SaveSettingsFails_Rollback(t *testing.T) {
 	// Create active settings file and make it read-only to force write error
 	settingsPath, _ := paths.SettingsFile()
 	_ = os.WriteFile(settingsPath, []byte(`{"model":"existing"}`), 0444)
+	t.Cleanup(func() {
+		_ = os.Chmod(settingsPath, 0644)
+	})
 
 	if err := SwitchProfile(s, "work"); err == nil {
 		t.Fatal("expected error when settings file cannot be written")
