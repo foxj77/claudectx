@@ -1,6 +1,6 @@
 module github.com/johnfox/claudectx
 
-go 1.25.5
+go 1.23
 
 require (
 	golang.org/x/sys v0.39.0 // indirect
