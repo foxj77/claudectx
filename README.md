@@ -1,12 +1,43 @@
 # claudectx
 
-**Fast, safe profile switching for Claude Code**
-
-Switch between Claude Code configurations in seconds. Perfect for managing multiple accounts, API providers, or client-specific settings.
+**Stop editing config files. Start switching in seconds.**
 
 ![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Tests](https://img.shields.io/badge/tests-85%2B%20passing-brightgreen)
+
+---
+
+## Why claudectx?
+
+**The Problem:** You're juggling multiple Claude Code setups—work account, personal projects, different API providers, client-specific instructions. Every time you need to switch, you're manually editing `settings.json`, swapping CLAUDE.md files, and hoping you don't break something.
+
+**The Solution:** `claudectx` lets you switch your entire Claude Code configuration with a single command. No more file editing. No more mistakes. Just type `claudectx work` and you're done.
+
+```bash
+# Before: Edit files, copy settings, pray nothing breaks
+vim ~/.claude/settings.json  # 😰
+
+# After: One command, instant switch
+claudectx work  # ✅
+```
+
+### Why Developers Choose claudectx
+
+| Pain Point | How claudectx Helps |
+|------------|---------------------|
+| "I keep overwriting my settings" | Automatic backups before every switch |
+| "Switching takes 5+ minutes" | Switch in under 1 second |
+| "I broke my config and lost work" | Instant rollback if anything fails |
+| "I have 4 different API providers" | Unlimited profiles, easy toggle |
+| "My team needs the same setup" | Export/import profiles as JSON |
+
+### Who Benefits Most
+
+- **Consultants & Freelancers** — Switch between client configs instantly
+- **Teams** — Share standardized profiles across developers
+- **Power Users** — Test different models, API providers, and MCP servers
+- **Anyone** who's tired of manual configuration management
 
 ---
 
@@ -17,7 +48,7 @@ claudectx is a command-line tool that lets you quickly switch between different 
 **Perfect for:**
 - 👔 Switching between work and personal Claude accounts
 - 🏢 Managing different client configurations
-- 🔌 Testing different API providers (Anthropic, Bedrock, custom)
+- 🔌 Testing different API providers (Anthropic, Bedrock, OpenRouter, Z.AI, custom endpoints)
 - 🛠️ Using different tool permissions and MCP servers
 - 📝 Maintaining separate instruction sets (CLAUDE.md files)
 
@@ -231,6 +262,127 @@ claudectx export team-standard team-config.json
 
 # Team members import
 claudectx import team-config.json work
+```
+
+---
+
+## Example Configurations
+
+Here are real-world profile configurations you can use as templates.
+
+### Creating a Profile for Alternative API Providers (e.g., GLM-4.7 via Z.AI)
+
+First, configure your current Claude Code settings, then save them as a profile:
+
+**1. Edit your settings file** (`~/.claude/settings.json`):
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "a1b2c3d4e5f6789012345678abcdef90.XyZ123AbCdEfGhIjKlMn",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.7",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.7",
+    "API_TIMEOUT_MS": "3000000"
+  },
+  "permissions": {}
+}
+```
+
+**2. Save it as a profile:**
+```bash
+claudectx -n glm-provider
+```
+
+**3. Switch to it anytime:**
+```bash
+claudectx glm-provider
+```
+
+### Creating a Profile with MCP Servers
+
+If you use MCP (Model Context Protocol) servers, you can include them in profiles:
+
+**1. Your MCP configuration** (`~/.claude/profiles/devops/mcp.json`):
+```json
+{
+  "flux-operator-mcp": {
+    "type": "stdio",
+    "command": "/opt/homebrew/bin/flux-operator-mcp",
+    "args": ["serve"],
+    "env": {
+      "KUBECONFIG": "/Users/yourname/.kube/config"
+    }
+  }
+}
+```
+
+**2. Combined with settings** (`~/.claude/profiles/devops/settings.json`):
+```json
+{
+  "env": {
+    "KUBECONFIG": "/Users/yourname/.kube/config"
+  },
+  "permissions": {
+    "allow": ["Bash(kubectl *)"]
+  }
+}
+```
+
+### Creating a Profile for AWS Bedrock
+
+```json
+{
+  "env": {
+    "ANTHROPIC_MODEL": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "AWS_REGION": "us-east-1",
+    "AWS_PROFILE": "production",
+    "CLAUDE_CODE_USE_BEDROCK": "1"
+  },
+  "permissions": {}
+}
+```
+
+Save as a profile:
+```bash
+claudectx -n bedrock-prod
+```
+
+### Creating a Profile with Custom CLAUDE.md Instructions
+
+Each profile can have its own global instructions file:
+
+**1. Create your profile:**
+```bash
+claudectx -n client-acme
+```
+
+**2. Edit the profile's CLAUDE.md** (`~/.claude/profiles/client-acme/CLAUDE.md`):
+```markdown
+# ACME Corp Project Guidelines
+
+- Always use TypeScript
+- Follow ACME's coding standards
+- Never commit directly to main
+- Run tests before suggesting commits
+```
+
+When you switch to `client-acme`, this CLAUDE.md becomes your global instructions.
+
+### Quick Profile Creation Workflow
+
+```bash
+# 1. Configure Claude Code however you want (edit settings.json, CLAUDE.md, etc.)
+
+# 2. Save current config as a new profile
+claudectx -n my-new-profile
+
+# 3. Verify it was created
+claudectx -l
+
+# 4. Switch away and back to test
+claudectx -               # Toggle to previous
+claudectx my-new-profile  # Switch back
 ```
 
 ---
