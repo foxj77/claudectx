@@ -8,7 +8,7 @@ import (
 	"github.com/johnfox/claudectx/internal/store"
 )
 
-const version = "1.2.0"
+var version = "dev"
 
 func main() {
 	// Initialize store
