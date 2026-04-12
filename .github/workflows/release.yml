@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version: '1.25'
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 # v7.0.0
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
+        env:
+          # GITHUB_TOKEN is used for publishing to the current repo
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use a PAT for homebrew-tap repository access
+          # Create a PAT at https://github.com/settings/tokens with 'repo' scope
+          # and add it as a repository secret named HOMEBREW_TAP_TOKEN
+          GITHUB_TOKEN_FOR_HOMEBREW_TAP: ${{ secrets.HOMEBREW_TAP_TOKEN }}
