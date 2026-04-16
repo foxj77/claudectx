@@ -281,3 +281,242 @@ func TestFileExists(t *testing.T) {
 		t.Error("FileExists() should return false for non-existent file")
 	}
 }
+
+// --- Issue #16: unknown field preservation tests ---
+
+// TestLoadSaveSettings_PreservesUnknownTopLevelFields verifies that fields in
+// settings.json that claudectx does not model (e.g. effortLevel, autoDreamEnabled)
+// survive a LoadSettings → SaveSettings roundtrip unchanged.
+func TestLoadSaveSettings_PreservesUnknownTopLevelFields(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "settings.json")
+
+	original := `{
+  "model": "opus",
+  "effortLevel": "medium",
+  "autoDreamEnabled": true,
+  "skipDangerousModePermissionPrompt": true
+}`
+	if err := os.WriteFile(path, []byte(original), 0644); err != nil {
+		t.Fatalf("failed to write settings: %v", err)
+	}
+
+	settings, err := LoadSettings(path)
+	if err != nil {
+		t.Fatalf("LoadSettings failed: %v", err)
+	}
+	if err := SaveSettings(path, settings); err != nil {
+		t.Fatalf("SaveSettings failed: %v", err)
+	}
+
+	raw := make(map[string]json.RawMessage)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("re-reading saved file failed: %v", err)
+	}
+
+	for _, key := range []string{"effortLevel", "autoDreamEnabled", "skipDangerousModePermissionPrompt"} {
+		if _, ok := raw[key]; !ok {
+			t.Errorf("key %q was stripped from settings.json during LoadSettings→SaveSettings roundtrip", key)
+		}
+	}
+
+	var effortLevel string
+	if err := json.Unmarshal(raw["effortLevel"], &effortLevel); err != nil || effortLevel != "medium" {
+		t.Errorf("effortLevel = %q, want %q", effortLevel, "medium")
+	}
+}
+
+// TestLoadSaveSettings_PreservesUnknownPermissionsFields verifies that fields
+// inside the permissions object that claudectx does not model (e.g. defaultMode)
+// survive a roundtrip.
+func TestLoadSaveSettings_PreservesUnknownPermissionsFields(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "settings.json")
+
+	original := `{
+  "model": "sonnet",
+  "permissions": {
+    "allow": ["WebSearch"],
+    "deny": [],
+    "defaultMode": "bypassPermissions"
+  }
+}`
+	if err := os.WriteFile(path, []byte(original), 0644); err != nil {
+		t.Fatalf("failed to write settings: %v", err)
+	}
+
+	settings, err := LoadSettings(path)
+	if err != nil {
+		t.Fatalf("LoadSettings failed: %v", err)
+	}
+	if err := SaveSettings(path, settings); err != nil {
+		t.Fatalf("SaveSettings failed: %v", err)
+	}
+
+	raw := make(map[string]json.RawMessage)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("re-reading saved file failed: %v", err)
+	}
+
+	permsRaw, ok := raw["permissions"]
+	if !ok {
+		t.Fatal("permissions key missing after roundtrip")
+	}
+	perms := make(map[string]json.RawMessage)
+	if err := json.Unmarshal(permsRaw, &perms); err != nil {
+		t.Fatalf("parsing permissions failed: %v", err)
+	}
+	if _, ok := perms["defaultMode"]; !ok {
+		t.Error("permissions.defaultMode was stripped during LoadSettings→SaveSettings roundtrip")
+	}
+	var defaultMode string
+	if err := json.Unmarshal(perms["defaultMode"], &defaultMode); err != nil || defaultMode != "bypassPermissions" {
+		t.Errorf("permissions.defaultMode = %q, want %q", defaultMode, "bypassPermissions")
+	}
+}
+
+// TestLoadSettings_KnownFieldsStillAccessible is a regression guard: after adding
+// unknown-field preservation, known fields must still be correctly populated.
+func TestLoadSettings_KnownFieldsStillAccessible(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "settings.json")
+
+	content := `{
+  "model": "haiku",
+  "env": {"MY_VAR": "hello"},
+  "permissions": {"allow": ["Bash"], "deny": ["WebSearch"]},
+  "effortLevel": "low",
+  "unknownArray": [1, 2, 3]
+}`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write settings: %v", err)
+	}
+
+	settings, err := LoadSettings(path)
+	if err != nil {
+		t.Fatalf("LoadSettings failed: %v", err)
+	}
+
+	if settings.Model != "haiku" {
+		t.Errorf("Model = %q, want %q", settings.Model, "haiku")
+	}
+	if settings.Env["MY_VAR"] != "hello" {
+		t.Errorf("Env[MY_VAR] = %q, want %q", settings.Env["MY_VAR"], "hello")
+	}
+	if settings.Permissions == nil {
+		t.Fatal("Permissions is nil")
+	}
+	if len(settings.Permissions.Allow) != 1 || settings.Permissions.Allow[0] != "Bash" {
+		t.Errorf("Permissions.Allow = %v, want [Bash]", settings.Permissions.Allow)
+	}
+	if len(settings.Permissions.Deny) != 1 || settings.Permissions.Deny[0] != "WebSearch" {
+		t.Errorf("Permissions.Deny = %v, want [WebSearch]", settings.Permissions.Deny)
+	}
+}
+
+// TestSaveSettings_ModifyKnownField_PreservesUnknownFields verifies that
+// changing a known field (Model) in the in-memory struct and saving does not
+// erase unknown fields that were loaded from disk.
+func TestSaveSettings_ModifyKnownField_PreservesUnknownFields(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "settings.json")
+
+	original := `{"model":"opus","effortLevel":"high","autoDreamEnabled":false}`
+	if err := os.WriteFile(path, []byte(original), 0644); err != nil {
+		t.Fatalf("failed to write settings: %v", err)
+	}
+
+	settings, err := LoadSettings(path)
+	if err != nil {
+		t.Fatalf("LoadSettings failed: %v", err)
+	}
+
+	// Simulate claudectx updating a known field
+	settings.Model = "sonnet"
+
+	if err := SaveSettings(path, settings); err != nil {
+		t.Fatalf("SaveSettings failed: %v", err)
+	}
+
+	raw := make(map[string]json.RawMessage)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("re-reading saved file failed: %v", err)
+	}
+
+	modelRaw, ok := raw["model"]
+	if !ok {
+		t.Fatal("model key missing after update")
+	}
+	var model string
+	if err := json.Unmarshal(modelRaw, &model); err != nil {
+		t.Fatalf("parsing model failed: %v", err)
+	}
+	if model != "sonnet" {
+		t.Errorf("model = %q after update, want %q", model, "sonnet")
+	}
+
+	if _, ok := raw["effortLevel"]; !ok {
+		t.Error("effortLevel was stripped when modifying an unrelated known field")
+	}
+	if _, ok := raw["autoDreamEnabled"]; !ok {
+		t.Error("autoDreamEnabled was stripped when modifying an unrelated known field")
+	}
+}
+
+// TestSaveSettings_NilPermissions_PreservesExistingPermissionsUnknownFields
+// verifies that when Permissions is nil in the in-memory struct but the file on
+// disk previously had permissions.defaultMode, that sub-field survives.
+func TestSaveSettings_NilPermissions_PreservesExistingPermissionsUnknownFields(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "settings.json")
+
+	original := `{"model":"opus","permissions":{"defaultMode":"bypassPermissions"}}`
+	if err := os.WriteFile(path, []byte(original), 0644); err != nil {
+		t.Fatalf("failed to write settings: %v", err)
+	}
+
+	settings, err := LoadSettings(path)
+	if err != nil {
+		t.Fatalf("LoadSettings failed: %v", err)
+	}
+
+	// Simulate a case where Permissions struct has no Allow/Deny but was loaded
+	// from a file that had defaultMode — the loaded Permissions object should
+	// still carry that unknown field through to the save.
+	if err := SaveSettings(path, settings); err != nil {
+		t.Fatalf("SaveSettings failed: %v", err)
+	}
+
+	raw := make(map[string]json.RawMessage)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("re-reading saved file failed: %v", err)
+	}
+
+	permsRaw, ok := raw["permissions"]
+	if !ok {
+		t.Fatal("permissions key missing after roundtrip")
+	}
+	perms := make(map[string]json.RawMessage)
+	if err := json.Unmarshal(permsRaw, &perms); err != nil {
+		t.Fatalf("parsing permissions failed: %v", err)
+	}
+	if _, ok := perms["defaultMode"]; !ok {
+		t.Error("permissions.defaultMode was stripped when Permissions has no Allow/Deny")
+	}
+}
