@@ -35,7 +35,7 @@ main.go (CLI argument routing)
 | Package | Purpose |
 |---------|---------|
 | `internal/store` | Profile persistence, tracks current/previous profile |
-| `internal/config` | Settings struct (`Env`, `Model`, `Permissions`), JSON I/O |
+| `internal/config` | Settings struct (`Env`, `Model`, `Permissions`), JSON I/O — unknown fields are preserved transparently via `extras map[string]json.RawMessage` |
 | `internal/mcpconfig` | MCP server configs from `~/.claude.json` |
 | `internal/paths` | Centralized path resolution for Claude files |
 | `internal/printer` | Colored terminal output (respects `NO_COLOR`) |
@@ -90,6 +90,7 @@ When modifying profile switching:
 - Don't skip validation before profile operations
 - Don't modify profiles without creating backups
 - Don't add external dependencies without strong justification
+- Don't add new top-level fields to `settings.json` by expanding the `Settings` struct — unknown fields are already preserved by the `extras` mechanism, so this is only needed when a field requires programmatic access from Go code
 
 ## Commands Reference
 
