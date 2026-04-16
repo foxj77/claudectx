@@ -310,7 +310,10 @@ func TestLoadSaveSettings_PreservesUnknownTopLevelFields(t *testing.T) {
 	}
 
 	raw := make(map[string]json.RawMessage)
-	data, _ := os.ReadFile(path)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("re-reading saved file failed: %v", err)
 	}
@@ -355,7 +358,10 @@ func TestLoadSaveSettings_PreservesUnknownPermissionsFields(t *testing.T) {
 	}
 
 	raw := make(map[string]json.RawMessage)
-	data, _ := os.ReadFile(path)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("re-reading saved file failed: %v", err)
 	}
@@ -441,13 +447,22 @@ func TestSaveSettings_ModifyKnownField_PreservesUnknownFields(t *testing.T) {
 	}
 
 	raw := make(map[string]json.RawMessage)
-	data, _ := os.ReadFile(path)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("re-reading saved file failed: %v", err)
 	}
 
+	modelRaw, ok := raw["model"]
+	if !ok {
+		t.Fatal("model key missing after update")
+	}
 	var model string
-	json.Unmarshal(raw["model"], &model)
+	if err := json.Unmarshal(modelRaw, &model); err != nil {
+		t.Fatalf("parsing model failed: %v", err)
+	}
 	if model != "sonnet" {
 		t.Errorf("model = %q after update, want %q", model, "sonnet")
 	}
@@ -485,7 +500,10 @@ func TestSaveSettings_NilPermissions_PreservesExistingPermissionsUnknownFields(t
 	}
 
 	raw := make(map[string]json.RawMessage)
-	data, _ := os.ReadFile(path)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read saved settings: %v", err)
+	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("re-reading saved file failed: %v", err)
 	}

@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/johnfox/claudectx/internal/paths"
@@ -15,7 +16,7 @@ import (
 // profile. This is the write-side of the issue #16 data-loss bug.
 func TestSyncCurrentProfile_PreservesUnknownSettingsFields(t *testing.T) {
 	tmp := t.TempDir()
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {
@@ -57,7 +58,7 @@ func TestSyncCurrentProfile_PreservesUnknownSettingsFields(t *testing.T) {
 		t.Fatalf("failed to get profile dir: %v", err)
 	}
 	raw := make(map[string]json.RawMessage)
-	data, err := os.ReadFile(profileDir + "/settings.json")
+	data, err := os.ReadFile(filepath.Join(profileDir, "settings.json"))
 	if err != nil {
 		t.Fatalf("failed to read stored profile settings: %v", err)
 	}
@@ -71,8 +72,14 @@ func TestSyncCurrentProfile_PreservesUnknownSettingsFields(t *testing.T) {
 	if _, ok := raw["skipDangerousModePermissionPrompt"]; !ok {
 		t.Error("skipDangerousModePermissionPrompt was stripped during SyncCurrentProfile — issue #16")
 	}
+	modelRaw, ok := raw["model"]
+	if !ok {
+		t.Fatal("model key missing from stored profile settings")
+	}
 	var model string
-	json.Unmarshal(raw["model"], &model)
+	if err := json.Unmarshal(modelRaw, &model); err != nil {
+		t.Fatalf("failed to parse stored profile model: %v", err)
+	}
 	if model != "opus" {
 		t.Errorf("model = %q, want %q", model, "opus")
 	}
@@ -85,7 +92,7 @@ func TestSyncCurrentProfile_PreservesUnknownSettingsFields(t *testing.T) {
 // auto-sync on the next switch.
 func TestHashSettings_StableAcrossUnknownFields(t *testing.T) {
 	tmp := t.TempDir()
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {

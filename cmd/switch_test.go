@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/johnfox/claudectx/internal/mcpconfig"
@@ -14,7 +15,7 @@ import (
 func TestSwitchProfile_InvalidName(t *testing.T) {
 	tmp := t.TempDir()
 	// isolate HOME
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {
@@ -28,7 +29,7 @@ func TestSwitchProfile_InvalidName(t *testing.T) {
 
 func TestSwitchProfile_ProfileDoesNotExist(t *testing.T) {
 	tmp := t.TempDir()
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {
@@ -42,7 +43,7 @@ func TestSwitchProfile_ProfileDoesNotExist(t *testing.T) {
 
 func TestSwitchProfile_Success(t *testing.T) {
 	tmp := t.TempDir()
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {
@@ -120,7 +121,7 @@ func TestSwitchProfile_Success(t *testing.T) {
 
 func TestSwitchProfile_SaveSettingsFails_Rollback(t *testing.T) {
 	tmp := t.TempDir()
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {
@@ -169,7 +170,7 @@ func TestSwitchProfile_SaveSettingsFails_Rollback(t *testing.T) {
 // effortLevel was set, switching to it must restore effortLevel.
 func TestSwitchProfile_PreservesProfileStoredUnknownFields(t *testing.T) {
 	tmp := t.TempDir()
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {
@@ -187,7 +188,7 @@ func TestSwitchProfile_PreservesProfileStoredUnknownFields(t *testing.T) {
 		t.Fatalf("failed to create profile dir: %v", err)
 	}
 	settingsWithUnknown := `{"model":"work-model","effortLevel":"high","autoDreamEnabled":true}`
-	if err := os.WriteFile(profileDir+"/settings.json", []byte(settingsWithUnknown), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(profileDir, "settings.json"), []byte(settingsWithUnknown), 0644); err != nil {
 		t.Fatalf("failed to write profile settings: %v", err)
 	}
 
@@ -220,8 +221,14 @@ func TestSwitchProfile_PreservesProfileStoredUnknownFields(t *testing.T) {
 	if _, ok := raw["autoDreamEnabled"]; !ok {
 		t.Error("autoDreamEnabled was stripped from active settings.json when switching to profile — issue #16")
 	}
+	modelRaw, ok := raw["model"]
+	if !ok {
+		t.Fatal(`active settings.json missing "model" field`)
+	}
 	var model string
-	json.Unmarshal(raw["model"], &model)
+	if err := json.Unmarshal(modelRaw, &model); err != nil {
+		t.Fatalf("failed to unmarshal model from active settings: %v", err)
+	}
 	if model != "work-model" {
 		t.Errorf("model = %q, want %q", model, "work-model")
 	}
@@ -233,7 +240,7 @@ func TestSwitchProfile_PreservesProfileStoredUnknownFields(t *testing.T) {
 // stored profile. Without this, switching away destroys the plugin state.
 func TestSwitchProfile_AutoSync_PreservesUnknownFieldsInProfile(t *testing.T) {
 	tmp := t.TempDir()
-	_ = os.Setenv("HOME", tmp)
+	t.Setenv("HOME", tmp)
 
 	s, err := store.NewStore()
 	if err != nil {
@@ -278,7 +285,7 @@ func TestSwitchProfile_AutoSync_PreservesUnknownFieldsInProfile(t *testing.T) {
 		t.Fatalf("failed to get profile dir: %v", err)
 	}
 	raw := make(map[string]json.RawMessage)
-	data, err := os.ReadFile(profileDir + "/settings.json")
+	data, err := os.ReadFile(filepath.Join(profileDir, "settings.json"))
 	if err != nil {
 		t.Fatalf("failed to read stored profile settings: %v", err)
 	}

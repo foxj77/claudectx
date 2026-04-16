@@ -50,9 +50,12 @@ func (s *Settings) UnmarshalJSON(data []byte) error {
 		}
 	}
 	if v, ok := raw["permissions"]; ok {
-		s.Permissions = &Permissions{}
-		if err := json.Unmarshal(v, s.Permissions); err != nil {
-			return fmt.Errorf("parsing permissions: %w", err)
+		// Preserve JSON null as a nil Permissions pointer (don't coerce to {}).
+		if string(v) != "null" {
+			s.Permissions = &Permissions{}
+			if err := json.Unmarshal(v, s.Permissions); err != nil {
+				return fmt.Errorf("parsing permissions: %w", err)
+			}
 		}
 	}
 	return nil
