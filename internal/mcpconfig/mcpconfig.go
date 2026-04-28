@@ -137,6 +137,28 @@ func LoadFromFile(path string) (MCPServers, error) {
 	return servers, nil
 }
 
+// SaveClaudeMCPConfig writes an MCP server map in the format expected by
+// Claude Code's --mcp-config flag: {"mcpServers": { ... }}.
+// This differs from SaveToFile, which stores the raw server map without the wrapper.
+func SaveClaudeMCPConfig(path string, servers MCPServers) error {
+	wrapper := struct {
+		MCPServers MCPServers `json:"mcpServers"`
+	}{
+		MCPServers: servers,
+	}
+
+	data, err := json.MarshalIndent(wrapper, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal MCP config: %w", err)
+	}
+	data = append(data, '\n')
+
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("failed to write MCP config: %w", err)
+	}
+	return nil
+}
+
 // FileExists checks if a file exists
 func FileExists(path string) bool {
 	_, err := os.Stat(path)

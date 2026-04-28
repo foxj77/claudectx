@@ -129,6 +129,24 @@ func main() {
 			os.Exit(1)
 		}
 
+	case "run":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: profile name required")
+			fmt.Fprintln(os.Stderr, "Usage: claudectx run <name> [-- <claude args...>]")
+			os.Exit(1)
+		}
+		opts, err := cmd.ParseRunArgs(os.Args[2:])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		result, err := cmd.RunProfile(s, opts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(result.ExitCode)
+
 	case "sync":
 		profileName := ""
 		if len(os.Args) > 2 {
@@ -163,6 +181,7 @@ func printHelp() {
 USAGE:
   claudectx                        Interactive profile selector (use ↑/↓ arrows)
   claudectx <NAME>                 Switch to profile (auto-syncs current changes first)
+  claudectx run <NAME> [-- ARGS]   Run Claude with profile for this session only
   claudectx -                      Switch to previous profile
   claudectx -l, --list             Simple list (for scripting/piping)
   claudectx -c, --current          Show current profile
@@ -179,6 +198,10 @@ USAGE:
 EXAMPLES:
   claudectx                        Open interactive selector
   claudectx work                   Switch to 'work' profile (auto-syncs changes first)
+  claudectx run work               Start Claude using 'work' without switching globally
+  claudectx run work -- --model opus
+  claudectx run review -- -p "Review this diff"
+  claudectx run work --dry-run     Print the command that would be run
   claudectx -                      Toggle between current and previous profile
   claudectx -l                     List all profiles (simple output)
   claudectx -n personal            Create 'personal' profile from current settings
@@ -193,6 +216,16 @@ EXAMPLES:
   cat work.json | claudectx import Import from stdin
   claudectx health                 Check current profile health
   claudectx health work            Check 'work' profile health
+
+SWITCH VS RUN:
+  claudectx work        Permanently switches global config — affects all new sessions
+  claudectx run work    Launches one session with that profile, global config unchanged
+
+NOTES (claudectx run):
+  - Profile settings override global ~/.claude/settings.json scalar values
+  - Permission arrays (allow/deny) accumulate with global settings — cannot be narrowed
+  - Profile CLAUDE.md is appended to the session system prompt (not a full replacement)
+  - Global ~/.claude/CLAUDE.md remains active alongside the profile's instructions
 
 WHAT CLAUDECTX MANAGES:
   - ~/.claude/settings.json    User-level settings

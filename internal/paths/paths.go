@@ -108,3 +108,12 @@ func EnsureProfileDir(name string) error {
 	}
 	return os.MkdirAll(profileDir, 0755)
 }
+
+// RunTempDir returns the base directory for claudectx run temp files.
+func RunTempDir() (string, error) {
+	claudeDir, err := ClaudeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(claudeDir, ".claudectx-run"), nil
+}
