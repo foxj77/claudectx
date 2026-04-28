@@ -2,9 +2,9 @@
 
 **Stop editing config files. Start switching in seconds.**
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Tests](https://img.shields.io/badge/tests-85%2B%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-127%2B%20passing-brightgreen)
 
 ---
 
@@ -31,6 +31,7 @@ claudectx work  # ✅
 | "I broke my config and lost work" | Instant rollback if anything fails |
 | "I have 4 different API providers" | Unlimited profiles, easy toggle |
 | "My team needs the same setup" | Export/import profiles as JSON |
+| "I need work and personal open at the same time" | `claudectx run` launches per-session without touching global config |
 
 ### Who Benefits Most
 
@@ -83,6 +84,30 @@ If you know the profile name:
 ```bash
 claudectx work
 ```
+
+### Run a Single Session Without Switching
+
+Open a Claude session using a profile without changing your global config.  
+Useful when you want work and personal sessions open at the same time:
+
+```bash
+claudectx run work
+```
+
+Pass extra Claude flags after `--`:
+
+```bash
+claudectx run work -- --model opus
+claudectx run review -- -p "Review this diff"
+```
+
+Preview the command without launching:
+
+```bash
+claudectx run work --dry-run
+```
+
+See [Switch vs Run](#switch-vs-run) for a full comparison.
 
 ### Toggle Between Profiles
 
@@ -173,6 +198,40 @@ claudectx -c
 claudectx -d old-client
 ```
 
+### Session Launcher (Run)
+
+`claudectx run` starts Claude Code with a profile's settings for the current terminal session only. No global state is modified — your active `settings.json`, `CLAUDE.md`, MCP servers, and current/previous profile trackers are all left untouched.
+
+```bash
+# Basic: launch Claude with 'work' profile in this terminal
+claudectx run work
+
+# Pass Claude flags after --
+claudectx run work -- --model opus --permission-mode plan
+
+# Non-interactive: run a prompt and exit
+claudectx run review -- -p "Summarise this PR" --output-format text
+
+# Dry-run: print the command without executing
+claudectx run work --dry-run
+```
+
+**How it works:**
+
+| Profile component | Mechanism |
+|-------------------|-----------|
+| Settings (model, env, permissions) | `--settings <profile/settings.json>` |
+| CLAUDE.md instructions | `--append-system-prompt-file <profile/CLAUDE.md>` |
+| MCP servers | Generated `--mcp-config` temp file + `--strict-mcp-config` |
+
+**Important caveats:**
+
+- **Settings:** Profile scalar settings (model, env vars, permission mode) override global `~/.claude/settings.json`. Permission arrays (`allow`/`deny`) are merged — a profile cannot narrow permissions already granted globally.
+- **CLAUDE.md:** The profile's `CLAUDE.md` is appended to the session system prompt. It is not a full replacement — your global `~/.claude/CLAUDE.md` remains active alongside it.
+- **MCP:** Only the profile's MCP servers are used (`--strict-mcp-config`). Global MCP servers from `~/.claude.json` are excluded for that session.
+- **Auth:** Authentication is not profile-scoped. `run` uses whatever Claude Code login is currently active.
+- **In-session changes:** `/config` edits inside a `run` session write to the normal user config, not the profile's `settings.json`.
+
 ### Advanced Features
 
 **Export a profile** to share with teammates:
@@ -222,8 +281,12 @@ claudectx -n client-acme
 claudectx -n client-globex
 claudectx -n personal
 
-# Switch to client work
+# Switch global config to a client
 claudectx client-acme
+
+# Or run two client sessions concurrently in separate terminals
+claudectx run client-acme    # terminal 1
+claudectx run client-globex  # terminal 2
 
 # Quick toggle between client and personal
 claudectx -
@@ -241,7 +304,7 @@ claudectx -n work
 # Create personal profile
 claudectx -n personal
 
-# Start work day
+# Start work day — switches global config
 claudectx work
 
 # End of day, switch to personal
@@ -249,6 +312,10 @@ claudectx personal
 
 # Or use interactive mode
 claudectx
+
+# Need both open at once? Use run in separate terminals
+claudectx run work      # terminal 1 — work session, global config unchanged
+claudectx run personal  # terminal 2 — personal session, global config unchanged
 ```
 
 ### Team Sharing Configuration
@@ -387,18 +454,39 @@ claudectx my-new-profile  # Switch back
 
 ---
 
+## Switch vs Run
+
+claudectx has two ways to use a profile:
+
+| | `claudectx <name>` | `claudectx run <name>` |
+|---|---|---|
+| **What it does** | Permanently switches global config | Launches one Claude session with that profile |
+| **Modifies `~/.claude/settings.json`** | ✅ Yes | ❌ No |
+| **Modifies `~/.claude/CLAUDE.md`** | ✅ Yes | ❌ No |
+| **Modifies `~/.claude.json` MCP servers** | ✅ Yes | ❌ No |
+| **Updates current/previous tracker** | ✅ Yes | ❌ No |
+| **Creates backup** | ✅ Yes | ❌ No |
+| **Concurrent sessions** | ❌ No (last switch wins) | ✅ Yes |
+| **Auto-syncs changes on next switch** | ✅ Yes | ❌ No |
+| **CLAUDE.md semantics** | Full replacement of global file | Appended to session prompt |
+
+**Rule of thumb:** use `claudectx work` when you want to change your default setup. Use `claudectx run work` when you need one session in a different context without disturbing anything else.
+
+---
+
 ## What Gets Switched?
 
-When you switch profiles, claudectx manages:
+When you run `claudectx <name>` (persistent switch), claudectx manages:
 
-- ✅ `~/.claude/settings.json` - All your Claude Code settings
-- ✅ `~/.claude/CLAUDE.md` - Your global instructions
+- ✅ `~/.claude/settings.json` — All your Claude Code settings
+- ✅ `~/.claude/CLAUDE.md` — Your global instructions
 - ✅ Model preferences (opus, sonnet, haiku)
 - ✅ Environment variables
 - ✅ Tool permissions
+- ✅ MCP server configurations
 - ✅ API configuration
 
-**What stays the same:**
+**What stays the same (both switch and run):**
 - ❌ Project-level settings in `.claude/` folders
 - ❌ OAuth session tokens
 - ❌ Conversation history
@@ -494,21 +582,27 @@ claudectx stores each profile in `~/.claude/profiles/`:
 
 ```
 ~/.claude/
-├── .claudectx-current      # Tracks which profile is active
-├── .claudectx-previous     # Enables toggle with 'claudectx -'
+├── .claudectx-current          # Tracks which profile is active
+├── .claudectx-previous         # Enables toggle with 'claudectx -'
+├── .claudectx-run/             # Temp MCP configs for 'claudectx run' sessions
+│   └── run-<timestamp>-<pid>/
+│       └── mcp.json            # Auto-deleted when the session ends
 ├── profiles/
 │   ├── work/
 │   │   ├── settings.json
-│   │   └── CLAUDE.md
+│   │   ├── CLAUDE.md
+│   │   └── mcp.json
 │   └── personal/
 │       ├── settings.json
 │       └── CLAUDE.md
-├── backups/                # Automatic backups
+├── backups/                    # Automatic backups (switch only)
 │   └── backup-1234567890/
-└── settings.json           # Active config (symlinked)
+└── settings.json               # Active config
 ```
 
-When you switch profiles, claudectx copies the profile's files to the active locations.
+**`claudectx <name>` (persistent switch):** copies profile files to the active locations, creates a backup first, rolls back automatically on failure.
+
+**`claudectx run <name>` (session launch):** passes `--settings`, `--append-system-prompt-file`, and a generated `--mcp-config` directly to `claude`. Nothing is copied or overwritten. The temp MCP config is deleted after Claude exits.
 
 ---
 
@@ -541,6 +635,7 @@ claudectx --version
 | Shell completion | ✅ | ❌ | ❌ |
 | Health checks | ✅ | ❌ | ❌ |
 | Rollback on error | ✅ | ❌ | ❌ |
+| Concurrent sessions (`run`) | ✅ | ❌ | ❌ |
 
 ---
 

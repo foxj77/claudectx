@@ -545,9 +545,51 @@ brews:
 4. **Default Profile**: What happens on first run with no profiles?
    - Recommendation: Auto-create "default" profile from current config
 
+---
+
+## Implemented Features (post v1.2.x)
+
+### `claudectx run` — Session-scoped profile launch (issue #21)
+
+Added in branch `feature/run-command`. Allows launching a Claude Code session
+with a named profile without modifying global config state.
+
+**Command:**
+```
+claudectx run <name> [-- <claude args...>]
+claudectx run <name> --dry-run
+```
+
+**Key design decisions:**
+- Uses `--settings`, `--append-system-prompt-file`, and a generated `--mcp-config` temp file
+- Global `~/.claude/settings.json`, `CLAUDE.md`, `claude.json`, and current/previous trackers are never touched
+- MCP temp config is written to `~/.claude/.claudectx-run/<timestamp>-<pid>/mcp.json` and deleted after Claude exits
+- MCP config is read by Claude at startup only (empirically verified), so post-exit cleanup is safe
+- `--append-system-prompt-file` is session-scoped and additive; global `~/.claude/CLAUDE.md` remains active
+- Permission arrays accumulate across settings scopes and cannot be narrowed via `--settings`
+- `--isolated` mode deferred until `--setting-sources` precedence with `--settings` is verified
+
+**New files:**
+- `cmd/run.go` — `ParseRunArgs`, `RunProfile`, `RunOptions`, `RunResult`
+- `cmd/run_test.go` — 25 tests
+- `cmd/run_parse_test.go` — 10 parser tests
+- `internal/mcpconfig/claudeformat_test.go` — 7 tests for `SaveClaudeMCPConfig`
+
+**Modified:**
+- `internal/mcpconfig/mcpconfig.go` — `SaveClaudeMCPConfig` (Claude `--mcp-config` wrapper format)
+- `internal/paths/paths.go` — `RunTempDir()`
+- `main.go` — `case "run"` routing, updated help text
+
+**Research docs:**
+- `docs/issue21.md` — full proposal
+- `docs/issue21-review.md` — review with empirical findings for all investigated items
+
+---
+
 ## References
 
 - [kubectx source code](https://github.com/ahmetb/kubectx) - Architecture inspiration
 - [Claude Code settings docs](https://code.claude.com/docs/en/settings) - Config format
+- [Claude Code CLI reference](https://code.claude.com/docs/en/cli-reference) - Flag documentation
 - [cctx implementation](https://github.com/nwiizo/cctx) - Existing community tool
 - [Go CLI best practices](https://github.com/spf13/cobra) - CLI framework options
